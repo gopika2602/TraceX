@@ -1,0 +1,15 @@
+{
+  "case_id": "CASE-2847",
+  "status": "likely-origin",
+  "suspect": {
+    "id": "dev-a-17",
+    "label": "Device A",
+    "kind": "device",
+    "state": "potential-victim",
+    "reason": "Earlier device and credential activity in this synthetic scenario suggest this suspect may also be a victim."
+  },
+  "likely_origin": {"id": "203.0.113.84", "label": "203.0.113.84", "kind": "external infrastructure"},
+  "confidence": {"score": 0.74, "label": "Synthetic demo estimate"},
+  "summary": "The earliest correlated network signal in this mock scenario precedes the token replay.",
+  "attribution_confirmed": false
+}

@@ -1,0 +1,5 @@
+[
+ {"id":"rem-1","title":"Revoke the compromised service token","description":"Invalidate the replayed credential and terminate sessions minted from the affected token.","action":"revoke_token(tok-9f2)","priority":"Critical","expected_paths_broken":[2],"collateral":"Active service sessions expire","status":"recommended"},
+ {"id":"rem-2","title":"Reduce the OAuth application scope","description":"Remove the unnecessary administrative payment permission from the connected application.","action":"remove_scope(oauth-77, payments:admin)","priority":"High","expected_paths_broken":[6],"collateral":"Payment administration integration loses access","status":"recommended"},
+ {"id":"rem-3","title":"Require step-up authentication for grants","description":"Add a fresh MFA challenge before new OAuth grants can be issued to this service identity.","action":"require_step_up(oauth_grants)","priority":"Medium","expected_paths_broken":[3],"collateral":"New grants require an additional approval step","status":"recommended"}
+]

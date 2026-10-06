@@ -1,0 +1,13 @@
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Local environment files and credentials (keep the documented template).
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Private key material.
+*.pem
+*.key

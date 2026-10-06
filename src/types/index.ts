@@ -1,0 +1,20 @@
+export type Severity='critical'|'high'|'medium'|'low'
+export type EventRecord={event_id:string;time:string;event_type:string;identity:string;token:string;application:string;resource:string;severity:Severity;source_ip:string;location:string}
+export type UserRole='admin'|'analyst'
+export type AuthUser={id:string;email:string;display_name?:string;role:UserRole;permissions?:string[]}
+export type AuthSession={user:AuthUser;expires_at:string}
+// Provisional frontend contract; see docs/frontend-api-contract.md before backend integration.
+export type OriginStatus='investigation-in-progress'|'likely-origin'|'inconclusive'|'unknown'
+export type OriginNodeState='suspect'|'potential-victim'|'confirmed-evidence'|'likely-origin'|'unknown'
+export type AttackOriginAssessment={case_id:string;status:OriginStatus;suspect?:{id:string;label:string;kind:'device'|'user'|'ip'|'session'|'unknown';state:OriginNodeState;reason?:string};likely_origin?:{id:string;label:string;kind:string};confidence?:{score:number;label?:string};summary?:string;attribution_confirmed:boolean}
+export type OriginTraceNode={id:string;label:string;kind:string;state:OriginNodeState;detail?:string;event_ids?:string[]}
+export type OriginTraceEdge={id:string;source:string;target:string;label?:string;event_id?:string}
+export type AttackOriginTrace={case_id:string;nodes:OriginTraceNode[];edges:OriginTraceEdge[];likely_origin_id?:string;attribution_confirmed:boolean}
+export type EvidenceRecord={id:string;timestamp:string;event_type:string;source?:string;destination?:string;device?:string;user?:string;ip?:string;reason:string;strength:'confirmed'|'strong'|'suspected'|'unknown'}
+export type AttackStep={step:number;source:string;target:string;permission:string;stage:string;summary:string;event_ids:string[];timestamp:string}
+export type AttackPath={case_id:string;steps:AttackStep[]}
+export type RootCause={initial_compromise:string;abused_credential:string;summary:string;contributing_factors:{code:string;title:string;detail:string}[];breakpoints:{type:string;step:number;action:string;reason:string}[]}
+export type BlastRadius={reachable_resources:number;sensitive_assets:number;critical_systems:number;financial_apis:number;customer_data_systems:number;other_identities:number;assets:{name:string;category:string;sensitivity:string;hops:number}[];synthetic:boolean}
+export type Remediation={id:string;title:string;description:string;action:string;priority:string;expected_paths_broken:number[];collateral:string;status:'recommended'|'applied'}
+export type VerificationResult={status:'PATH_BROKEN'|'PATH_STILL_OPEN';broken_at_step:number|null;before_allowed_steps:number[];after_allowed_steps:number[];before_blast_radius:number;after_blast_radius:number;checked_at:string}
+export type CaseSummary={id:string;title:string;identity:string;severity:Severity;status:string;detected:string;source:string}

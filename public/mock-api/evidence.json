@@ -1,0 +1,6 @@
+[
+  {"id":"evt-7098","timestamp":"2025-10-06T09:41:51Z","event_type":"Unusual device sign-in","source":"Identity Provider","destination":"service principal","device":"Device A (dev-a-17)","user":"svc-orders-prod","ip":"185.220.101.14","reason":"New device and unfamiliar client appeared before the token replay.","strength":"confirmed"},
+  {"id":"evt-7099","timestamp":"2025-10-06T09:42:02Z","event_type":"Token theft indicator","source":"Device A (dev-a-17)","destination":"tok-9f2","device":"Device A (dev-a-17)","user":"svc-orders-prod","ip":"185.220.101.14","reason":"The session and token correlate with the preceding unfamiliar device sign-in.","strength":"suspected"},
+  {"id":"evt-7097","timestamp":"2025-10-06T09:39:22Z","event_type":"Credential access from Device B","source":"Device B (dev-b-04)","destination":"Device A (dev-a-17)","device":"Device B (dev-b-04)","user":"svc-orders-prod","ip":"10.24.6.18","reason":"Earlier endpoint activity is linked to the device later observed in the token sequence.","strength":"strong"},
+  {"id":"evt-7096","timestamp":"2025-10-06T09:38:04Z","event_type":"Suspicious outbound connection","source":"Device B (dev-b-04)","destination":"203.0.113.84","device":"Device B (dev-b-04)","user":"svc-orders-prod","ip":"203.0.113.84","reason":"Earliest correlated external connection in the mock event set.","strength":"strong"}
+]

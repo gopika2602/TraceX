@@ -1,0 +1,18 @@
+{
+  "case_id": "CASE-2847",
+  "likely_origin_id": "origin-ip",
+  "attribution_confirmed": false,
+  "nodes": [
+    {"id":"suspect-device","label":"Device A","kind":"device","state":"potential-victim","detail":"Unfamiliar client observed before token replay.","event_ids":["evt-7098"]},
+    {"id":"stolen-token","label":"Credential / token theft","kind":"credential","state":"confirmed-evidence","detail":"Token tok-9f2 is linked to the suspect session.","event_ids":["evt-7099"]},
+    {"id":"device-b","label":"Device B","kind":"device","state":"suspect","detail":"Earlier endpoint activity linked to Device A.","event_ids":["evt-7097"]},
+    {"id":"connection","label":"Suspicious connection","kind":"network event","state":"confirmed-evidence","detail":"Outbound network event predates the observed identity activity.","event_ids":["evt-7096"]},
+    {"id":"origin-ip","label":"203.0.113.84","kind":"external infrastructure","state":"likely-origin","detail":"Earliest correlated external signal in this synthetic fixture.","event_ids":["evt-7096"]}
+  ],
+  "edges": [
+    {"id":"edge-a-token","source":"suspect-device","target":"stolen-token","label":"token associated with session"},
+    {"id":"edge-token-b","source":"stolen-token","target":"device-b","label":"earlier credential access"},
+    {"id":"edge-b-connection","source":"device-b","target":"connection","label":"network activity"},
+    {"id":"edge-connection-origin","source":"connection","target":"origin-ip","label":"destination"}
+  ]
+}

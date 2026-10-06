@@ -1,0 +1,9 @@
+{"case_id":"CASE-2847","steps":[
+ {"step":1,"source":"185.220.101.14","target":"svc-orders-prod","permission":"authenticate","stage":"Initial access","summary":"A service token was replayed from an unfamiliar device.","event_ids":["evt-7101","evt-7107"],"timestamp":"2025-10-06T09:42:18Z"},
+ {"step":2,"source":"svc-orders-prod","target":"helpdeskpro","permission":"app.read","stage":"Application access","summary":"The compromised identity accessed a delegated support application.","event_ids":["evt-7102"],"timestamp":"2025-10-06T09:43:02Z"},
+ {"step":3,"source":"helpdeskpro","target":"oauth-77","permission":"grant.read","stage":"Credential access","summary":"A privileged OAuth credential was discovered in the connected app.","event_ids":["evt-7103","evt-7109"],"timestamp":"2025-10-06T09:44:37Z"},
+ {"step":4,"source":"oauth-77","target":"orders-api","permission":"orders.read","stage":"Lateral movement","summary":"The OAuth token reached the production orders API.","event_ids":["evt-7104"],"timestamp":"2025-10-06T09:45:10Z"},
+ {"step":5,"source":"oauth-77","target":"payments-svc","permission":"payments:admin","stage":"Privilege escalation","summary":"Excessive OAuth scope exposed the payment service.","event_ids":["evt-7105","evt-7108"],"timestamp":"2025-10-06T09:46:41Z"},
+ {"step":6,"source":"payments-svc","target":"customers-db","permission":"customer-data.read","stage":"Sensitive data access","summary":"The chain reached the customer records database.","event_ids":["evt-7106"],"timestamp":"2025-10-06T09:48:15Z"},
+ {"step":7,"source":"svc-orders-prod","target":"identity-provider","permission":"policy.bypass","stage":"Persistence","summary":"The actor bypassed step-up authentication to preserve access.","event_ids":["evt-7108"],"timestamp":"2025-10-06T09:51:04Z"}
+]}

@@ -1,0 +1,1 @@
+export default function Brand({compact=false}:{compact?:boolean}){return <div className={`brand${compact?' brand-compact':''}`}><img className="brand-logo" src="/assets/tracex-logo.jpeg" alt="TraceX" /></div>}

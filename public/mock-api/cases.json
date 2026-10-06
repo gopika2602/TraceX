@@ -1,0 +1,7 @@
+[
+  {"id":"CASE-2847","title":"Compromised service identity","identity":"svc-orders-prod","severity":"critical","status":"Investigating","detected":"09:42:18 UTC","source":"Identity anomaly"},
+  {"id":"CASE-2841","title":"Unusual OAuth consent grant","identity":"maria.chen","severity":"high","status":"Contained","detected":"08:16:03 UTC","source":"OAuth monitoring"},
+  {"id":"CASE-2836","title":"Privileged token from new device","identity":"svc-data-pipeline","severity":"high","status":"Investigating","detected":"Yesterday","source":"Token analytics"},
+  {"id":"CASE-2829","title":"Suspicious mailbox delegation","identity":"james.wilson","severity":"medium","status":"Resolved","detected":"Oct 04, 16:38","source":"Behavior analytics"},
+  {"id":"CASE-2817","title":"Dormant account reactivated","identity":"contractor-482","severity":"low","status":"Resolved","detected":"Oct 03, 11:04","source":"Directory monitor"}
+]
