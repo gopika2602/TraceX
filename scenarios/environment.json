@@ -1,0 +1,96 @@
+{
+  "environment_id": "nimbus-prod-v1",
+  "version": 1,
+  "nodes": [
+    {
+      "id": "priya.s",
+      "type": "identity"
+    },
+    {
+      "id": "tok-9f2",
+      "type": "token",
+      "owner": "priya.s"
+    },
+    {
+      "id": "helpdeskpro",
+      "type": "application"
+    },
+    {
+      "id": "oauth-77",
+      "type": "token",
+      "sensitivity": "high"
+    },
+    {
+      "id": "orders-api",
+      "type": "api",
+      "sensitivity": "medium"
+    },
+    {
+      "id": "payments-svc",
+      "type": "service",
+      "sensitivity": "high",
+      "tags": [
+        "financial",
+        "critical"
+      ]
+    },
+    {
+      "id": "customers-db",
+      "type": "database",
+      "sensitivity": "high",
+      "tags": [
+        "pii"
+      ]
+    },
+    {
+      "id": "crm",
+      "type": "application"
+    },
+    {
+      "id": "email",
+      "type": "application"
+    }
+  ],
+  "edges": [
+    {
+      "from": "priya.s",
+      "to": "tok-9f2",
+      "permission": "owns"
+    },
+    {
+      "from": "tok-9f2",
+      "to": "helpdeskpro",
+      "permission": "app:access"
+    },
+    {
+      "from": "helpdeskpro",
+      "to": "oauth-77",
+      "permission": "oauth:issue"
+    },
+    {
+      "from": "oauth-77",
+      "to": "orders-api",
+      "permission": "orders:*"
+    },
+    {
+      "from": "oauth-77",
+      "to": "payments-svc",
+      "permission": "payments:admin"
+    },
+    {
+      "from": "payments-svc",
+      "to": "customers-db",
+      "permission": "db:read"
+    },
+    {
+      "from": "priya.s",
+      "to": "crm",
+      "permission": "crm:read"
+    },
+    {
+      "from": "priya.s",
+      "to": "email",
+      "permission": "email:read"
+    }
+  ]
+}

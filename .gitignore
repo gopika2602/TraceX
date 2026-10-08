@@ -1,6 +1,12 @@
 node_modules/
 dist/
 *.tsbuildinfo
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
 
 # Local environment files and credentials (keep the documented template).
 .env
@@ -11,3 +17,5 @@ dist/
 # Private key material.
 *.pem
 *.key
+
+.vercel
