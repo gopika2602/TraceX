@@ -41,6 +41,7 @@ def ensure_indexes(database) -> None:
     database.environments.create_index([("dataset_id", ASCENDING), ("version", ASCENDING)], unique=True)
     database.cases.create_index([("created_at", ASCENDING)])
     database.analyses.create_index([("case_id", ASCENDING)], unique=True)
+    database.evidence.create_index([("case_id", ASCENDING), ("record.timestamp", ASCENDING)])
 
 
 def close_client() -> None:

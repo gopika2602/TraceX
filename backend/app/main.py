@@ -5,10 +5,12 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi import Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pymongo.errors import PyMongoError
 
 from .config import CORS_ORIGINS
-from .db import close_client
+from .db import close_client, get_database
 from .routers import auth_routes, cases, datasets
 
 
@@ -39,3 +41,12 @@ app.include_router(cases.router)
 @app.get("/health", tags=["health"])
 def health():
     return {"status": "ok", "service": "TraceX API"}
+
+
+@app.get("/health/ready", tags=["health"])
+def readiness(database=Depends(get_database)):
+    try:
+        database.command("ping")
+    except PyMongoError as exc:
+        raise HTTPException(status_code=503, detail="MongoDB readiness check failed.") from exc
+    return {"status": "ready", "service": "TraceX API", "database": "connected", "engine": "loaded"}
