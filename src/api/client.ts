@@ -1,9 +1,16 @@
 import axios from 'axios'
 import type {AttackPath,AttackOriginAssessment,AttackOriginTrace,BlastRadius,CaseIntake,CaseSummary,EventRecord,EvidenceRecord,IntakeEvidence,Remediation,RootCause,VerificationResult,AuthSession} from '../types'
 const mock=import.meta.env.VITE_USE_MOCK==='true'
-const backendUrl=import.meta.env.VITE_API_BASE_URL?.trim()
-const api=axios.create({baseURL:mock?'/mock-api':backendUrl||'http://127.0.0.1:8000',timeout:10000,withCredentials:true})
-const authApi=axios.create({baseURL:backendUrl||'http://127.0.0.1:8000',timeout:10000,withCredentials:true})
+const configuredBackendUrl=import.meta.env.VITE_API_BASE_URL?.trim()
+const backendUrl=configuredBackendUrl||(import.meta.env.DEV?'http://127.0.0.1:8000':'')
+export const apiConfigurationError=import.meta.env.PROD&&!configuredBackendUrl
+  ?'TraceX is not connected to its backend. Set VITE_API_BASE_URL in the Vercel Production environment, then redeploy.'
+  :''
+const api=axios.create({baseURL:mock?'/mock-api':backendUrl,timeout:10000,withCredentials:true})
+const authApi=axios.create({baseURL:backendUrl,timeout:10000,withCredentials:true})
+const requireBackendConfiguration=()=>{if(apiConfigurationError)throw new Error(apiConfigurationError)}
+api.interceptors.request.use(config=>{requireBackendConfiguration();return config})
+authApi.interceptors.request.use(config=>{requireBackendConfiguration();return config})
 const handleUnauthorized=(response:any,error:any)=>{const url=error.config?.url??'';if(response?.status===401&&!url.endsWith('/auth/login')&&!url.endsWith('/auth/session')&&!url.endsWith('/auth/logout')&&typeof window!=='undefined')window.dispatchEvent(new Event('tracex:session-expired'));return Promise.reject(error)}
 api.interceptors.response.use(response=>response,error=>handleUnauthorized(error.response,error))
 authApi.interceptors.response.use(response=>response,error=>handleUnauthorized(error.response,error))

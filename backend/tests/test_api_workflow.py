@@ -37,6 +37,24 @@ def register(client: TestClient, email: str, password: str = "Test-password-123"
     return client.post("/auth/register", json={"email": email, "password": password, "display_name": name})
 
 
+def test_health_endpoint_is_available_without_database(api: TestClient):
+    response = api.get("/health")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok", "service": "TraceX API"}
+
+
+def test_cors_allows_vercel_production_origin(api: TestClient):
+    response = api.options(
+        "/health",
+        headers={
+            "Origin": "https://tracex-app.vercel.app",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "https://tracex-app.vercel.app"
+
+
 def test_authentication_validation_logout_and_protected_routes(api: TestClient):
     assert api.get("/cases").status_code == 401
     registered = register(api, "analyst@example.test")
