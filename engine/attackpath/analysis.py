@@ -23,5 +23,4 @@ def analyze(events: list[dict[str, Any]], environment: dict[str, Any]) -> dict[s
     attack_origin = analyze_attack_origin(events, primary, groups)
     return {"correlation": groups, "attack_path": primary, "attack_paths": attack_paths,
             "root_cause": root_cause, "blast_radius": blast_radius, "remediations": remediations,
-            "attack_origin": attack_origin,
-            "synthetic": True}
+            "attack_origin": attack_origin}

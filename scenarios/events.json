@@ -1,0 +1,955 @@
+[
+  {
+    "event_id": "evt-0003",
+    "timestamp": "2026-10-06T09:41:42Z",
+    "event_type": "malicious_external_connection",
+    "identity": "external-unknown",
+    "token_id": "external-session-token",
+    "session_id": "external-session",
+    "device_id": "egress-host",
+    "source": {
+      "ip": "198.51.100.8",
+      "device_id": "egress-host"
+    },
+    "destination": {
+      "ip": "203.0.113.77",
+      "device_id": "device-new",
+      "application": "Identity Provider",
+      "resource": "session endpoint"
+    },
+    "summary": "Threat-intelligence matched external connection",
+    "indicators": [
+      "known_bad_ip",
+      "command_and_control"
+    ],
+    "severity": "high"
+  },
+  {
+    "event_id": "evt-0004",
+    "timestamp": "2026-10-06T09:42:18Z",
+    "event_type": "session_reuse",
+    "identity": "priya.s",
+    "token_id": "tok-9f2",
+    "session_id": "sess-41",
+    "device_id": "device-new",
+    "source": {
+      "ip": "203.0.113.77",
+      "device_id": "device-new",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "helpdeskpro",
+      "resource": "helpdeskpro"
+    },
+    "permission": "session:use",
+    "metadata": {},
+    "severity": "medium",
+    "summary": "Observed session reuse at helpdeskpro"
+  },
+  {
+    "event_id": "evt-0005",
+    "timestamp": "2026-10-06T09:43:18Z",
+    "event_type": "token_use",
+    "identity": "priya.s",
+    "token_id": "tok-9f2",
+    "session_id": "sess-41",
+    "device_id": "device-new",
+    "source": {
+      "ip": "203.0.113.77",
+      "device_id": "device-new",
+      "country": "US"
+    },
+    "destination": {
+      "application": "helpdeskpro",
+      "resource": "helpdeskpro"
+    },
+    "permission": "app:access",
+    "metadata": {},
+    "severity": "high",
+    "summary": "Observed token use at helpdeskpro"
+  },
+  {
+    "event_id": "evt-0006",
+    "timestamp": "2026-10-06T09:44:18Z",
+    "event_type": "application_access",
+    "identity": "priya.s",
+    "token_id": "tok-9f2",
+    "session_id": "sess-41",
+    "device_id": "device-new",
+    "source": {
+      "ip": "203.0.113.77",
+      "device_id": "device-new",
+      "country": "US"
+    },
+    "destination": {
+      "application": "helpdeskpro",
+      "resource": "helpdeskpro"
+    },
+    "permission": "app:access",
+    "metadata": {},
+    "severity": "high",
+    "summary": "Observed application access at helpdeskpro"
+  },
+  {
+    "event_id": "evt-0007",
+    "timestamp": "2026-10-06T09:45:18Z",
+    "event_type": "oauth_create",
+    "identity": "priya.s",
+    "token_id": "oauth-77",
+    "session_id": "sess-41",
+    "device_id": "device-new",
+    "source": {
+      "ip": "203.0.113.77",
+      "device_id": "device-new",
+      "country": "US"
+    },
+    "destination": {
+      "application": "helpdeskpro",
+      "resource": "helpdeskpro"
+    },
+    "permission": "oauth:issue",
+    "metadata": {
+      "issued_by_session": "sess-41",
+      "issued_by_token": "tok-9f2",
+      "scopes": [
+        "payments:admin"
+      ]
+    },
+    "severity": "high",
+    "summary": "Observed oauth create at helpdeskpro"
+  },
+  {
+    "event_id": "evt-0008",
+    "timestamp": "2026-10-06T09:46:18Z",
+    "event_type": "api_call",
+    "identity": "priya.s",
+    "token_id": "oauth-77",
+    "session_id": "sess-41",
+    "device_id": "device-new",
+    "source": {
+      "ip": "203.0.113.77",
+      "device_id": "device-new",
+      "country": "US"
+    },
+    "destination": {
+      "application": "orders-api",
+      "resource": "orders-api"
+    },
+    "permission": "orders:*",
+    "metadata": {},
+    "severity": "high",
+    "summary": "Observed api call at orders-api"
+  },
+  {
+    "event_id": "evt-0009",
+    "timestamp": "2026-10-06T09:47:18Z",
+    "event_type": "privilege_escalation",
+    "identity": "priya.s",
+    "token_id": "oauth-77",
+    "session_id": "sess-41",
+    "device_id": "device-new",
+    "source": {
+      "ip": "203.0.113.77",
+      "device_id": "device-new",
+      "country": "US"
+    },
+    "destination": {
+      "application": "payments-svc",
+      "resource": "payments-svc"
+    },
+    "permission": "payments:admin",
+    "metadata": {},
+    "severity": "critical",
+    "summary": "Observed privilege escalation at payments-svc"
+  },
+  {
+    "event_id": "evt-0010",
+    "timestamp": "2026-10-06T09:48:18Z",
+    "event_type": "db_query",
+    "identity": "priya.s",
+    "token_id": "oauth-77",
+    "session_id": "sess-41",
+    "device_id": "device-new",
+    "source": {
+      "ip": "203.0.113.77",
+      "device_id": "device-new",
+      "country": "US"
+    },
+    "destination": {
+      "application": "customers-db",
+      "resource": "customers-db"
+    },
+    "permission": "db:read",
+    "metadata": {},
+    "severity": "critical",
+    "summary": "Observed db query at customers-db"
+  },
+  {
+    "event_id": "evt-bg-001",
+    "timestamp": "2026-10-06T10:02:15Z",
+    "event_type": "mailbox_access",
+    "identity": "ravi.k",
+    "token_id": "tok-ravi-demo",
+    "session_id": "sess-ravi-k-demo",
+    "device_id": "device-ravi",
+    "source": {
+      "ip": "10.20.0.41",
+      "device_id": "device-ravi",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "CRM",
+      "resource": "crm-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "low",
+    "summary": "Routine mailbox access by ravi.k"
+  },
+  {
+    "event_id": "evt-bg-002",
+    "timestamp": "2026-10-06T10:03:05Z",
+    "event_type": "directory_lookup",
+    "identity": "ravi.k",
+    "token_id": "tok-ravi-demo",
+    "session_id": "sess-ravi-k-demo",
+    "device_id": "device-ravi",
+    "source": {
+      "ip": "10.20.0.41",
+      "device_id": "device-ravi",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "CRM",
+      "resource": "crm-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "medium",
+    "summary": "Routine directory lookup by ravi.k"
+  },
+  {
+    "event_id": "evt-bg-003",
+    "timestamp": "2026-10-06T10:04:05Z",
+    "event_type": "interactive_sign_in",
+    "identity": "anita.m",
+    "token_id": "tok-anita-demo",
+    "session_id": "sess-anita-m-demo",
+    "device_id": "device-anita",
+    "source": {
+      "ip": "10.20.0.52",
+      "device_id": "device-anita",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "CRM",
+      "resource": "crm-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "low",
+    "summary": "Routine interactive sign in by anita.m"
+  },
+  {
+    "event_id": "evt-bg-004",
+    "timestamp": "2026-10-06T10:05:01Z",
+    "event_type": "directory_lookup",
+    "identity": "ravi.k",
+    "token_id": "tok-ravi-demo",
+    "session_id": "sess-ravi-k-demo",
+    "device_id": "device-ravi",
+    "source": {
+      "ip": "10.20.0.41",
+      "device_id": "device-ravi",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "Helpdesk",
+      "resource": "helpdesk-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "medium",
+    "summary": "Routine directory lookup by ravi.k"
+  },
+  {
+    "event_id": "evt-bg-005",
+    "timestamp": "2026-10-06T10:06:14Z",
+    "event_type": "service_health_check",
+    "identity": "ravi.k",
+    "token_id": "tok-ravi-demo",
+    "session_id": "sess-ravi-k-demo",
+    "device_id": "device-ravi",
+    "source": {
+      "ip": "10.20.0.41",
+      "device_id": "device-ravi",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "Helpdesk",
+      "resource": "helpdesk-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "low",
+    "summary": "Routine service health check by ravi.k"
+  },
+  {
+    "event_id": "evt-bg-006",
+    "timestamp": "2026-10-06T10:07:44Z",
+    "event_type": "file_read",
+    "identity": "anita.m",
+    "token_id": "tok-anita-demo",
+    "session_id": "sess-anita-m-demo",
+    "device_id": "device-anita",
+    "source": {
+      "ip": "10.20.0.52",
+      "device_id": "device-anita",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "CRM",
+      "resource": "crm-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "low",
+    "summary": "Routine file read by anita.m"
+  },
+  {
+    "event_id": "evt-bg-007",
+    "timestamp": "2026-10-06T10:08:13Z",
+    "event_type": "file_read",
+    "identity": "anita.m",
+    "token_id": "tok-anita-demo",
+    "session_id": "sess-anita-m-demo",
+    "device_id": "device-anita",
+    "source": {
+      "ip": "10.20.0.52",
+      "device_id": "device-anita",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "Directory",
+      "resource": "directory-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "low",
+    "summary": "Routine file read by anita.m"
+  },
+  {
+    "event_id": "evt-bg-008",
+    "timestamp": "2026-10-06T10:09:06Z",
+    "event_type": "service_health_check",
+    "identity": "ravi.k",
+    "token_id": "tok-ravi-demo",
+    "session_id": "sess-ravi-k-demo",
+    "device_id": "device-ravi",
+    "source": {
+      "ip": "10.20.0.41",
+      "device_id": "device-ravi",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "CRM",
+      "resource": "crm-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "low",
+    "summary": "Routine service health check by ravi.k"
+  },
+  {
+    "event_id": "evt-bg-009",
+    "timestamp": "2026-10-06T10:10:51Z",
+    "event_type": "mailbox_access",
+    "identity": "anita.m",
+    "token_id": "tok-anita-demo",
+    "session_id": "sess-anita-m-demo",
+    "device_id": "device-anita",
+    "source": {
+      "ip": "10.20.0.52",
+      "device_id": "device-anita",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "Helpdesk",
+      "resource": "helpdesk-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "low",
+    "summary": "Routine mailbox access by anita.m"
+  },
+  {
+    "event_id": "evt-bg-010",
+    "timestamp": "2026-10-06T10:11:59Z",
+    "event_type": "interactive_sign_in",
+    "identity": "anita.m",
+    "token_id": "tok-anita-demo",
+    "session_id": "sess-anita-m-demo",
+    "device_id": "device-anita",
+    "source": {
+      "ip": "10.20.0.52",
+      "device_id": "device-anita",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "Helpdesk",
+      "resource": "helpdesk-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "low",
+    "summary": "Routine interactive sign in by anita.m"
+  },
+  {
+    "event_id": "evt-bg-011",
+    "timestamp": "2026-10-06T10:12:53Z",
+    "event_type": "mailbox_access",
+    "identity": "ravi.k",
+    "token_id": "tok-ravi-demo",
+    "session_id": "sess-ravi-k-demo",
+    "device_id": "device-ravi",
+    "source": {
+      "ip": "10.20.0.41",
+      "device_id": "device-ravi",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "Helpdesk",
+      "resource": "helpdesk-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "medium",
+    "summary": "Routine mailbox access by ravi.k"
+  },
+  {
+    "event_id": "evt-bg-012",
+    "timestamp": "2026-10-06T10:13:45Z",
+    "event_type": "file_read",
+    "identity": "anita.m",
+    "token_id": "tok-anita-demo",
+    "session_id": "sess-anita-m-demo",
+    "device_id": "device-anita",
+    "source": {
+      "ip": "10.20.0.52",
+      "device_id": "device-anita",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "Helpdesk",
+      "resource": "helpdesk-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "low",
+    "summary": "Routine file read by anita.m"
+  },
+  {
+    "event_id": "evt-bg-013",
+    "timestamp": "2026-10-06T10:14:05Z",
+    "event_type": "mailbox_access",
+    "identity": "ravi.k",
+    "token_id": "tok-ravi-demo",
+    "session_id": "sess-ravi-k-demo",
+    "device_id": "device-ravi",
+    "source": {
+      "ip": "10.20.0.41",
+      "device_id": "device-ravi",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "Mail",
+      "resource": "mail-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "low",
+    "summary": "Routine mailbox access by ravi.k"
+  },
+  {
+    "event_id": "evt-bg-014",
+    "timestamp": "2026-10-06T10:15:29Z",
+    "event_type": "mailbox_access",
+    "identity": "ravi.k",
+    "token_id": "tok-ravi-demo",
+    "session_id": "sess-ravi-k-demo",
+    "device_id": "device-ravi",
+    "source": {
+      "ip": "10.20.0.41",
+      "device_id": "device-ravi",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "Reporting",
+      "resource": "reporting-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "medium",
+    "summary": "Routine mailbox access by ravi.k"
+  },
+  {
+    "event_id": "evt-bg-015",
+    "timestamp": "2026-10-06T10:16:22Z",
+    "event_type": "mailbox_access",
+    "identity": "anita.m",
+    "token_id": "tok-anita-demo",
+    "session_id": "sess-anita-m-demo",
+    "device_id": "device-anita",
+    "source": {
+      "ip": "10.20.0.52",
+      "device_id": "device-anita",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "Mail",
+      "resource": "mail-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "low",
+    "summary": "Routine mailbox access by anita.m"
+  },
+  {
+    "event_id": "evt-bg-016",
+    "timestamp": "2026-10-06T10:17:40Z",
+    "event_type": "directory_lookup",
+    "identity": "anita.m",
+    "token_id": "tok-anita-demo",
+    "session_id": "sess-anita-m-demo",
+    "device_id": "device-anita",
+    "source": {
+      "ip": "10.20.0.52",
+      "device_id": "device-anita",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "CRM",
+      "resource": "crm-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "low",
+    "summary": "Routine directory lookup by anita.m"
+  },
+  {
+    "event_id": "evt-bg-017",
+    "timestamp": "2026-10-06T10:18:24Z",
+    "event_type": "service_health_check",
+    "identity": "ravi.k",
+    "token_id": "tok-ravi-demo",
+    "session_id": "sess-ravi-k-demo",
+    "device_id": "device-ravi",
+    "source": {
+      "ip": "10.20.0.41",
+      "device_id": "device-ravi",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "Mail",
+      "resource": "mail-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "low",
+    "summary": "Routine service health check by ravi.k"
+  },
+  {
+    "event_id": "evt-bg-018",
+    "timestamp": "2026-10-06T10:19:14Z",
+    "event_type": "interactive_sign_in",
+    "identity": "ravi.k",
+    "token_id": "tok-ravi-demo",
+    "session_id": "sess-ravi-k-demo",
+    "device_id": "device-ravi",
+    "source": {
+      "ip": "10.20.0.41",
+      "device_id": "device-ravi",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "Directory",
+      "resource": "directory-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "low",
+    "summary": "Routine interactive sign in by ravi.k"
+  },
+  {
+    "event_id": "evt-bg-019",
+    "timestamp": "2026-10-06T10:20:04Z",
+    "event_type": "mailbox_access",
+    "identity": "anita.m",
+    "token_id": "tok-anita-demo",
+    "session_id": "sess-anita-m-demo",
+    "device_id": "device-anita",
+    "source": {
+      "ip": "10.20.0.52",
+      "device_id": "device-anita",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "Reporting",
+      "resource": "reporting-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "low",
+    "summary": "Routine mailbox access by anita.m"
+  },
+  {
+    "event_id": "evt-bg-020",
+    "timestamp": "2026-10-06T10:21:25Z",
+    "event_type": "service_health_check",
+    "identity": "anita.m",
+    "token_id": "tok-anita-demo",
+    "session_id": "sess-anita-m-demo",
+    "device_id": "device-anita",
+    "source": {
+      "ip": "10.20.0.52",
+      "device_id": "device-anita",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "Mail",
+      "resource": "mail-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "medium",
+    "summary": "Routine service health check by anita.m"
+  },
+  {
+    "event_id": "evt-bg-021",
+    "timestamp": "2026-10-06T10:22:08Z",
+    "event_type": "mailbox_access",
+    "identity": "anita.m",
+    "token_id": "tok-anita-demo",
+    "session_id": "sess-anita-m-demo",
+    "device_id": "device-anita",
+    "source": {
+      "ip": "10.20.0.52",
+      "device_id": "device-anita",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "Mail",
+      "resource": "mail-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "low",
+    "summary": "Routine mailbox access by anita.m"
+  },
+  {
+    "event_id": "evt-bg-022",
+    "timestamp": "2026-10-06T10:23:57Z",
+    "event_type": "service_health_check",
+    "identity": "anita.m",
+    "token_id": "tok-anita-demo",
+    "session_id": "sess-anita-m-demo",
+    "device_id": "device-anita",
+    "source": {
+      "ip": "10.20.0.52",
+      "device_id": "device-anita",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "Helpdesk",
+      "resource": "helpdesk-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "medium",
+    "summary": "Routine service health check by anita.m"
+  },
+  {
+    "event_id": "evt-bg-023",
+    "timestamp": "2026-10-06T10:24:08Z",
+    "event_type": "file_read",
+    "identity": "anita.m",
+    "token_id": "tok-anita-demo",
+    "session_id": "sess-anita-m-demo",
+    "device_id": "device-anita",
+    "source": {
+      "ip": "10.20.0.52",
+      "device_id": "device-anita",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "Directory",
+      "resource": "directory-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "medium",
+    "summary": "Routine file read by anita.m"
+  },
+  {
+    "event_id": "evt-bg-024",
+    "timestamp": "2026-10-06T10:25:55Z",
+    "event_type": "interactive_sign_in",
+    "identity": "anita.m",
+    "token_id": "tok-anita-demo",
+    "session_id": "sess-anita-m-demo",
+    "device_id": "device-anita",
+    "source": {
+      "ip": "10.20.0.52",
+      "device_id": "device-anita",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "CRM",
+      "resource": "crm-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "low",
+    "summary": "Routine interactive sign in by anita.m"
+  },
+  {
+    "event_id": "evt-bg-025",
+    "timestamp": "2026-10-06T10:26:38Z",
+    "event_type": "service_health_check",
+    "identity": "ravi.k",
+    "token_id": "tok-ravi-demo",
+    "session_id": "sess-ravi-k-demo",
+    "device_id": "device-ravi",
+    "source": {
+      "ip": "10.20.0.41",
+      "device_id": "device-ravi",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "Mail",
+      "resource": "mail-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "low",
+    "summary": "Routine service health check by ravi.k"
+  },
+  {
+    "event_id": "evt-bg-026",
+    "timestamp": "2026-10-06T10:27:29Z",
+    "event_type": "directory_lookup",
+    "identity": "anita.m",
+    "token_id": "tok-anita-demo",
+    "session_id": "sess-anita-m-demo",
+    "device_id": "device-anita",
+    "source": {
+      "ip": "10.20.0.52",
+      "device_id": "device-anita",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "Reporting",
+      "resource": "reporting-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "medium",
+    "summary": "Routine directory lookup by anita.m"
+  },
+  {
+    "event_id": "evt-bg-027",
+    "timestamp": "2026-10-06T10:28:43Z",
+    "event_type": "interactive_sign_in",
+    "identity": "anita.m",
+    "token_id": "tok-anita-demo",
+    "session_id": "sess-anita-m-demo",
+    "device_id": "device-anita",
+    "source": {
+      "ip": "10.20.0.52",
+      "device_id": "device-anita",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "Helpdesk",
+      "resource": "helpdesk-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "medium",
+    "summary": "Routine interactive sign in by anita.m"
+  },
+  {
+    "event_id": "evt-bg-028",
+    "timestamp": "2026-10-06T10:29:49Z",
+    "event_type": "mailbox_access",
+    "identity": "ravi.k",
+    "token_id": "tok-ravi-demo",
+    "session_id": "sess-ravi-k-demo",
+    "device_id": "device-ravi",
+    "source": {
+      "ip": "10.20.0.41",
+      "device_id": "device-ravi",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "Helpdesk",
+      "resource": "helpdesk-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "medium",
+    "summary": "Routine mailbox access by ravi.k"
+  },
+  {
+    "event_id": "evt-bg-029",
+    "timestamp": "2026-10-06T10:30:27Z",
+    "event_type": "mailbox_access",
+    "identity": "anita.m",
+    "token_id": "tok-anita-demo",
+    "session_id": "sess-anita-m-demo",
+    "device_id": "device-anita",
+    "source": {
+      "ip": "10.20.0.52",
+      "device_id": "device-anita",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "CRM",
+      "resource": "crm-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "low",
+    "summary": "Routine mailbox access by anita.m"
+  },
+  {
+    "event_id": "evt-bg-030",
+    "timestamp": "2026-10-06T10:31:32Z",
+    "event_type": "mailbox_access",
+    "identity": "anita.m",
+    "token_id": "tok-anita-demo",
+    "session_id": "sess-anita-m-demo",
+    "device_id": "device-anita",
+    "source": {
+      "ip": "10.20.0.52",
+      "device_id": "device-anita",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "CRM",
+      "resource": "crm-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "low",
+    "summary": "Routine mailbox access by anita.m"
+  },
+  {
+    "event_id": "evt-bg-031",
+    "timestamp": "2026-10-06T10:32:38Z",
+    "event_type": "directory_lookup",
+    "identity": "ravi.k",
+    "token_id": "tok-ravi-demo",
+    "session_id": "sess-ravi-k-demo",
+    "device_id": "device-ravi",
+    "source": {
+      "ip": "10.20.0.41",
+      "device_id": "device-ravi",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "Directory",
+      "resource": "directory-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "low",
+    "summary": "Routine directory lookup by ravi.k"
+  },
+  {
+    "event_id": "evt-bg-032",
+    "timestamp": "2026-10-06T10:33:34Z",
+    "event_type": "file_read",
+    "identity": "ravi.k",
+    "token_id": "tok-ravi-demo",
+    "session_id": "sess-ravi-k-demo",
+    "device_id": "device-ravi",
+    "source": {
+      "ip": "10.20.0.41",
+      "device_id": "device-ravi",
+      "country": "IN"
+    },
+    "destination": {
+      "application": "Directory",
+      "resource": "directory-workspace"
+    },
+    "permission": "read",
+    "metadata": {
+      "background": true
+    },
+    "severity": "medium",
+    "summary": "Routine file read by ravi.k"
+  }
+]

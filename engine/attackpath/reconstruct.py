@@ -53,7 +53,7 @@ def reconstruct(events: list[dict[str, Any]], group: dict[str, Any]) -> dict[str
         token = event.get("token_id")
         app = destination.get("application")
         resource = destination.get("resource")
-        steps.append({"step_number": number, "stage": stage, "event_ids": [event_id],
+        steps.append({"step_number": number, "stage": stage, "permission": event.get("permission"), "event_ids": [event_id],
                       "timestamp": event.get("timestamp", event.get("time")),
                       "identity": identity, "token_id": token, "application": app,
                       "resource": resource, "summary": event.get("summary", event.get("event_type", event.get("type", stage)))})

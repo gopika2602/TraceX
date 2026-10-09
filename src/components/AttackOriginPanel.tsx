@@ -3,7 +3,7 @@ import ReactFlow,{Background,Controls,MarkerType,Position,type Edge,type Node} f
 import type {AttackOriginAssessment,AttackOriginTrace,EvidenceRecord,OriginNodeState} from '../types'
 import {Icon} from './Icons'
 
-const stateLabels:Record<OriginNodeState,string>={suspect:'Suspect', 'potential-victim':'Potential victim','confirmed-evidence':'Confirmed evidence','likely-origin':'Likely origin',unknown:'Unknown'}
+const stateLabels:Record<OriginNodeState,string>={suspect:'Candidate', 'suspected-origin':'Suspected origin','potential-victim':'Potential victim','suspected-compromised-device':'Suspected compromised device','confirmed-evidence':'Confirmed evidence','likely-origin':'Likely origin',unknown:'Unknown'}
 const strengthLabels={confirmed:'Confirmed evidence',strong:'Strong indicator',suspected:'Suspected',unknown:'Unknown'}
 const statusLabels={
   'investigation-in-progress':'Investigation in progress',
@@ -31,7 +31,7 @@ export default function AttackOriginPanel({assessment,evidence,trace,isSynthetic
   return <section className="origin-panel" aria-label="Attack origin evidence">
     {error&&<div className="inline-error" role="alert">{error}</div>}
     <div className="origin-summary">
-      <div className="origin-assessment-copy"><span className="origin-eyebrow">ATTACK ORIGIN</span><h3>{statusLabels[assessment?.status??'unknown']}</h3><div className="origin-suspect-line"><span>Suspect</span><strong>{assessment?.suspect?.label??'Unknown'}</strong>{assessment?.suspect&&<em>{stateLabels[assessment.suspect.state]}</em>}</div><p>{assessment?.suspect?.reason??assessment?.summary??'No origin assessment was returned. Attacker identity could not be conclusively determined.'}</p><button className="trace-back-button" onClick={onTraceBack} disabled={!assessment?.suspect||traceLoading}>{traceLoading?<span className="spinner"/>:<Icon name="nodes" width={15} height={15}/>} {traceLoading?'Tracing…':'Trace Back'}</button></div>
+      <div className="origin-assessment-copy"><span className="origin-eyebrow">ATTACK ORIGIN</span><h3>{statusLabels[assessment?.status??'unknown']}</h3><div className="origin-suspect-line"><span>Candidate entity</span><strong>{assessment?.suspect?.label??'Unknown'}</strong>{assessment?.suspect&&<em>{stateLabels[assessment.suspect.state]}</em>}</div><p>{assessment?.suspect?.reason??assessment?.summary??'No origin assessment was returned. Attacker identity could not be conclusively determined.'}</p><button className="trace-back-button" onClick={onTraceBack} disabled={!assessment?.suspect||traceLoading}>{traceLoading?<span className="spinner"/>:<Icon name="nodes" width={15} height={15}/>} {traceLoading?'Tracing…':'Trace Back'}</button></div>
       <div className="origin-confidence"><span>CONFIDENCE</span><strong>{hasConfidence?`${Math.round(confidence!*100)}%`:'Unknown'}</strong><small>{assessment?.confidence?.label??(isSynthetic?'No demo score is supplied.':'No confidence score returned by the backend.')}</small>{assessment?.likely_origin&&<div className="likely-origin"><span>LIKELY ORIGIN</span><strong>{assessment.likely_origin.label}</strong><small>{assessment.likely_origin.kind}</small></div>}</div>
     </div>
     {isSynthetic&&<div className="demo-auth-note">Synthetic demo data only. This is not real incident evidence or human-attacker attribution.</div>}

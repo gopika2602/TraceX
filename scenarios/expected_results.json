@@ -1,0 +1,29 @@
+{
+  "scenario_id": "nimbus-v1",
+  "synthetic": true,
+  "event_count": 40,
+  "attack_event_count": 8,
+  "grouped_attack_events": 7,
+  "expected_attack_event_ids": [
+    "evt-0004",
+    "evt-0005",
+    "evt-0006",
+    "evt-0007",
+    "evt-0008",
+    "evt-0009",
+    "evt-0010"
+  ],
+  "root_cause": {
+    "identity": "priya.s",
+    "credential": "tok-9f2"
+  },
+  "blast_radius": {
+    "reachable_resources": 7,
+    "sensitive_assets": 3
+  },
+  "verification": {
+    "remediation_id": "rem-1",
+    "status": "PATH_BROKEN",
+    "broken_at_step": 2
+  }
+}

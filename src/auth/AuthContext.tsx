@@ -22,7 +22,7 @@ export function AuthProvider({children}:{children:ReactNode}){
     void getAuthSession().then(value=>{if(active){setSession(value);setStatus(value?'authenticated':'unauthenticated')}}).catch(error=>{
       if(!active)return
       setSession(null);setStatus('unauthenticated')
-      const expired=(axios.isAxiosError(error)&&error.response?.status===401&&error.response.data?.code==='SESSION_EXPIRED')||(error instanceof Error&&error.message==='SESSION_EXPIRED')
+      const expired=(axios.isAxiosError(error)&&error.response?.status===401&&(error.response.data?.code==='SESSION_EXPIRED'||error.response.data?.detail?.code==='SESSION_EXPIRED'))||(error instanceof Error&&error.message==='SESSION_EXPIRED')
       setSessionExpired(expired)
       if(expired&&initialPath.current!=='/login')navigateRef.current('/login',{replace:true,state:{sessionExpired:true}})
     })

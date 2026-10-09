@@ -6,6 +6,7 @@ from collections import deque
 from typing import Any
 
 from .graph import build_environment_graph, node_map
+from .policy import can_reach
 
 
 def calculate_blast_radius(environment: dict[str, Any], compromised: str | None) -> dict[str, Any]:
@@ -21,6 +22,12 @@ def calculate_blast_radius(environment: dict[str, Any], compromised: str | None)
         if node in distance and distance[node] <= hops: continue
         distance[node] = hops
         for child in graph.successors(node):
+            edge = graph[node][child]
+            permission = edge.get("permission", edge.get("permissions", edge.get("actions")))
+            if isinstance(permission, list):
+                permission = permission[0] if permission else None
+            if not can_reach(environment, node, child, permission, compromised).get("allowed", False):
+                continue
             if child not in distance: queue.append((child, hops + 1))
     resources = []
     for node_id, hops in distance.items():
@@ -38,4 +45,4 @@ def calculate_blast_radius(environment: dict[str, Any], compromised: str | None)
                         "financial_apis": sum("financial" in str(item["tags"]).lower() or "payment" in item["node_id"].lower() for item in resources),
                         "customer_data_systems": sum("customer" in item["node_id"].lower() or "pii" in str(item["tags"]).lower() for item in resources),
                         "other_identities": sum(metadata.get(item["node_id"], {}).get("type") == "identity" for item in resources)},
-            "reachable_nodes": resources, "synthetic": True}
+            "reachable_nodes": resources}
