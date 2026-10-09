@@ -37,10 +37,25 @@ def register(client: TestClient, email: str, password: str = "Test-password-123"
     return client.post("/auth/register", json={"email": email, "password": password, "display_name": name})
 
 
-def test_health_endpoint_is_available_without_database(api: TestClient):
+def test_health_endpoint_and_database_readiness(api: TestClient):
     response = api.get("/health")
     assert response.status_code == 200
     assert response.json() == {"status": "ok", "service": "TraceX API"}
+    ready = api.get("/health/ready")
+    assert ready.status_code == 200
+    assert ready.json()["database"] == "connected"
+
+
+def test_database_readiness_returns_service_unavailable_when_database_fails(api: TestClient, monkeypatch):
+    from fastapi import HTTPException
+
+    def unavailable_database():
+        raise HTTPException(status_code=503, detail="MongoDB is unavailable.")
+
+    monkeypatch.setitem(app.dependency_overrides, get_database, unavailable_database)
+    response = api.get("/health/ready")
+    assert response.status_code == 503
+    assert response.json()["detail"] == "MongoDB is unavailable."
 
 
 def test_cors_allows_vercel_production_origin(api: TestClient):
@@ -129,6 +144,8 @@ def test_analysis_persistence_remediation_authorization_and_verification(api: Te
 
 
 def test_case_intake_persists_evidence_and_analyzes_submitted_records(api: TestClient):
+    admin = TestClient(app)
+    assert register(admin, "admin@example.test", name="TraceX Admin").status_code == 201
     assert register(api, "intake@example.test").status_code == 201
     payload = {
         "case_id": "CASE-INTAKE-1",
@@ -139,9 +156,22 @@ def test_case_intake_persists_evidence_and_analyzes_submitted_records(api: TestC
         "investigator_name": "Analyst One",
         "investigator_notes": "Initial notes remain separate from generated analysis.",
         "evidence": [
-            {"evidence_type": "new_device_login", "timestamp": "2026-10-09T08:05:00Z", "identity": "person@example.test", "device_id": "device-a", "source_ip": "198.51.100.7", "api_service": "mail", "description": "First observed login."},
-            {"evidence_type": "new_device_login", "timestamp": "2026-10-09T08:15:00Z", "identity": "person@example.test", "device_id": "device-b", "source_ip": "203.0.113.9", "session_id": "session-2", "token_id": "token-2", "api_service": "mail", "description": "Second device login."},
+            {"evidence_type": "new_device_login", "timestamp": "2026-10-09T08:05:00Z", "identity": "person@example.test", "device_id": "device-a", "source_ip": "198.51.100.7", "token_id": "token-2", "api_service": "identity-provider", "description": "First observed login."},
+            {"evidence_type": "token_use", "timestamp": "2026-10-09T08:15:00Z", "identity": "person@example.test", "device_id": "device-b", "source_ip": "203.0.113.9", "session_id": "session-2", "token_id": "token-2", "permission": "read", "api_service": "mail-api", "resource": "customer-db", "description": "Token used to read customer data."},
         ],
+        "environment": {
+            "nodes": [
+                {"id": "person@example.test", "type": "identity"},
+                {"id": "token-2", "type": "token"},
+                {"id": "mail-api", "type": "application"},
+                {"id": "customer-db", "type": "database", "sensitivity": "high", "tags": ["customer-data"]},
+            ],
+            "edges": [
+                {"from": "person@example.test", "to": "token-2", "permission": "use"},
+                {"from": "token-2", "to": "mail-api", "permission": "read"},
+                {"from": "mail-api", "to": "customer-db", "permission": "read"},
+            ],
+        },
     }
     created = api.post("/cases/intake", json=payload)
     assert created.status_code == 201, created.text
@@ -150,6 +180,9 @@ def test_case_intake_persists_evidence_and_analyzes_submitted_records(api: TestC
     assert result["evidence_count"] == 2
     assert result["synthetic"] is False
     assert result["status"] == "Draft"
+    saved_environment = api.get(f"/environments/{result['case']['dataset_id']}")
+    assert saved_environment.status_code == 200
+    assert saved_environment.json()["edges"] == payload["environment"]["edges"]
     stored_case = api.get("/cases/CASE-INTAKE-1")
     assert stored_case.status_code == 200
     assert stored_case.json()["case_information"]["investigator_notes"] == payload["investigator_notes"]
@@ -168,6 +201,29 @@ def test_case_intake_persists_evidence_and_analyzes_submitted_records(api: TestC
     path = api.get("/cases/CASE-INTAKE-1/attack-path").json()
     assert path["steps"]
     assert {event_id for step in path["steps"] for event_id in step["event_ids"]} <= {event["event_id"] for event in events}
+    event_ids = {event["event_id"] for event in events}
+    root_cause = api.get("/cases/CASE-INTAKE-1/root-cause")
+    attack_origin = api.get("/cases/CASE-INTAKE-1/attack-origin")
+    blast_radius = api.get("/cases/CASE-INTAKE-1/blast-radius")
+    engine_evidence = api.get("/cases/CASE-INTAKE-1/evidence")
+    assert all(response.status_code == 200 for response in (root_cause, attack_origin, blast_radius, engine_evidence))
+    assert set(root_cause.json()["evidence_event_ids"]) <= event_ids
+    assert attack_origin.json()["attribution_confirmed"] is False
+    assert blast_radius.json()["synthetic"] is False
+    assert {item["id"] for item in engine_evidence.json()} == event_ids
+    remediations = api.get("/cases/CASE-INTAKE-1/remediations")
+    assert remediations.status_code == 200
+    assert remediations.json()
+    remediation_id = remediations.json()[0]["id"]
+    assert api.post(f"/cases/CASE-INTAKE-1/remediations/{remediation_id}/apply").status_code == 403
+    applied = admin.post(f"/cases/CASE-INTAKE-1/remediations/{remediation_id}/apply")
+    assert applied.status_code == 200, applied.text
+    verified = admin.post("/cases/CASE-INTAKE-1/verify", params={"remediation_id": remediation_id})
+    assert verified.status_code == 200, verified.text
+    assert verified.json()["status"] == "PATH_BROKEN"
+    assert verified.json()["before_allowed_steps"]
+    assert verified.json()["normal_access_preserved"] is True
     saved_note = api.patch("/cases/CASE-INTAKE-1/notes", json={"notes": "Follow up with identity team."})
     assert saved_note.status_code == 200
     assert api.get("/cases/CASE-INTAKE-1").json()["case_information"]["investigator_notes"] == "Follow up with identity team."
+    admin.close()

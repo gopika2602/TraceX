@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -44,6 +45,8 @@ class IntakeEvidence(BaseModel):
     identity: str | None = Field(default=None, max_length=320)
     session_id: str | None = Field(default=None, max_length=200)
     token_id: str | None = Field(default=None, max_length=200)
+    permission: str | None = Field(default=None, max_length=300)
+    resource: str | None = Field(default=None, max_length=500)
     user_agent: str | None = Field(default=None, max_length=1000)
     process: str | None = Field(default=None, max_length=500)
     authentication: str | None = Field(default=None, max_length=500)
@@ -62,6 +65,7 @@ class CaseIntake(BaseModel):
     investigator_name: str | None = Field(default=None, max_length=200)
     investigator_notes: str | None = Field(default=None, max_length=8000)
     evidence: list[IntakeEvidence] = Field(min_length=1, max_length=10000)
+    environment: dict[str, Any] | None = None
 
     @field_validator("case_id")
     @classmethod

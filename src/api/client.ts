@@ -1,11 +1,13 @@
 import axios from 'axios'
 import type {AttackPath,AttackOriginAssessment,AttackOriginTrace,BlastRadius,CaseIntake,CaseSummary,EventRecord,EvidenceRecord,IntakeEvidence,Remediation,RootCause,VerificationResult,AuthSession} from '../types'
-const mock=import.meta.env.VITE_USE_MOCK==='true'
+const mock=import.meta.env.DEV&&import.meta.env.VITE_USE_MOCK==='true'
 const configuredBackendUrl=import.meta.env.VITE_API_BASE_URL?.trim()
 const backendUrl=configuredBackendUrl||(import.meta.env.DEV?'http://127.0.0.1:8000':'')
 export const apiConfigurationError=import.meta.env.PROD&&!configuredBackendUrl
   ?'TraceX is not connected to its backend. Set VITE_API_BASE_URL in the Vercel Production environment, then redeploy.'
-  :''
+  :import.meta.env.PROD&&import.meta.env.VITE_USE_MOCK==='true'
+    ?'Mock data mode is disabled for hosted deployments. Set VITE_USE_MOCK=false in the Vercel Production environment, then redeploy.'
+    :''
 const api=axios.create({baseURL:mock?'/mock-api':backendUrl,timeout:10000,withCredentials:true})
 const authApi=axios.create({baseURL:backendUrl,timeout:10000,withCredentials:true})
 const requireBackendConfiguration=()=>{if(apiConfigurationError)throw new Error(apiConfigurationError)}

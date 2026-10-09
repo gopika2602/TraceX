@@ -54,4 +54,4 @@ Vercel variables:
 - `VITE_API_BASE_URL` — required API base URL, set for each environment that should use the backend.
 - `VITE_USE_MOCK=false` — recommended for Production so case data uses the backend.
 
-The frontend permits a localhost API default only during Vite development. A production build without `VITE_API_BASE_URL` displays a configuration error rather than silently sending requests to a laptop address. `/health` is a process health check; `/health/ready` checks MongoDB connectivity.
+The frontend permits a localhost API default only during Vite development. A production build without `VITE_API_BASE_URL` displays a configuration error rather than silently sending requests to a laptop address. Production builds also reject `VITE_USE_MOCK=true` and direct the operator to disable it. `/health` is a process health check; `/health/ready` checks MongoDB connectivity.

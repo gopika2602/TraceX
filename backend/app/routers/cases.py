@@ -15,7 +15,7 @@ from ..auth import get_current_user, require_admin
 from ..data import read_environment, read_events
 from ..db import get_database
 from ..models import CaseCreate, CaseIntake, InvestigatorNotes
-from ..data import persist_dataset
+from ..data import persist_dataset, validate_environment
 
 router = APIRouter(tags=["cases"])
 
@@ -87,6 +87,7 @@ def _intake_event(item, event_id: str) -> dict[str, Any]:
         "event_id": event_id,
         "timestamp": item.timestamp.astimezone(timezone.utc).isoformat().replace("+00:00", "Z"),
         "event_type": item.evidence_type,
+        "permission": item.permission,
         "identity": item.identity or "unknown",
         "token_id": item.token_id or "unknown",
         "session_id": item.session_id or "unknown",
@@ -94,19 +95,21 @@ def _intake_event(item, event_id: str) -> dict[str, Any]:
         "source": {"ip": item.source_ip or "unknown", "device_id": item.device_id or "unknown",
                    "session_id": item.session_id or "unknown", "user_agent": item.user_agent or "unknown"},
         "destination": {"ip": item.destination_ip or "unknown", "application": item.api_service or "unknown",
-                        "resource": item.api_service or "unknown"},
+                        "resource": item.resource or item.api_service or "unknown"},
         "summary": item.description or "Investigator supplied evidence record.",
         "metadata": {"source_label": item.source, "process": item.process,
                      "authentication": item.authentication, "network_connection": item.network_connection},
     }
 
 
-def _intake_environment(items) -> dict[str, Any]:
+def _intake_environment(items, supplied_environment: dict[str, Any] | None = None) -> dict[str, Any]:
+    if supplied_environment is not None:
+        return validate_environment(supplied_environment)
     nodes: dict[str, dict[str, str]] = {}
     for item in items:
         for value, kind in ((item.source_ip, "ip"), (item.destination_ip, "ip"), (item.device_id, "device"),
                             (item.identity, "identity"), (item.session_id, "session"), (item.token_id, "token"),
-                            (item.api_service, "service")):
+                            (item.api_service, "service"), (item.resource, "resource")):
             if value:
                 nodes.setdefault(value, {"id": value, "type": kind})
     return {"nodes": list(nodes.values()), "edges": [], "relationships": "No access edges are inferred from co-occurrence alone."}
@@ -127,7 +130,7 @@ def create_intake(payload: CaseIntake, current_user: dict = Depends(get_current_
         events.append(_intake_event(item, event_id))
         evidence_rows.append({"_id": event_id, "case_id": case_id, "owner_id": current_user["id"],
                               "created_at": now, "record": record, "event_id": event_id})
-    environment = _intake_environment(payload.evidence)
+    environment = _intake_environment(payload.evidence, payload.environment)
     dataset = persist_dataset(database, events, environment, name=payload.case_name, owner_id=current_user["id"])
     summary = {"id": case_id, "title": payload.case_name, "identity": "Unknown identity", "severity": "unknown",
                "status": "Draft", "detected": payload.incident_at.isoformat() if payload.incident_at else now.isoformat(),
