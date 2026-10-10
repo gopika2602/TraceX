@@ -12,7 +12,7 @@ This setup hosts the React frontend on Vercel, the FastAPI service on Render, an
 ## 2. Deploy the API on Render
 
 1. Push this repository to GitHub and open the Render Dashboard.
-2. Choose **New → Blueprint**, select `gopika2602/TraceX`, and select the `backend` branch.
+2. Choose **New → Blueprint**, select `gopika2602/TraceX`, and select the `main` branch. If the existing Render service is still connected to the older `backend` branch, change its connected branch to `main` (or otherwise deploy the current `main` commit) so it includes the admin-bootstrap code.
 3. Confirm that Render finds the root `render.yaml` and creates the `tracex-api` web service.
 4. When prompted, enter the Atlas connection string as `MONGODB_URI`. Render generates `JWT_SECRET_KEY` from the Blueprint. Keep that value private and do not rotate it casually, because sessions signed with the old key will stop working.
 5. Set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in Render before the first deploy when the Atlas `users` collection is empty. Use your own email and a unique, strong password. The service creates this account as an Admin once; it will not create or update any users after the collection contains a user. Never put real values in Git or commit them to `.env` files. After confirming you can sign in, remove these two bootstrap variables from Render.
