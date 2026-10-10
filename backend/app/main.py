@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -10,14 +11,22 @@ from fastapi.middleware.cors import CORSMiddleware
 from pymongo.errors import PyMongoError
 
 from .config import CORS_ORIGINS
+from .bootstrap import bootstrap_admin
 from .db import close_client, get_database
 from .routers import auth_routes, cases, datasets
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    yield
-    close_client()
+    try:
+        admin_email = os.getenv("ADMIN_EMAIL")
+        admin_password = os.getenv("ADMIN_PASSWORD")
+        if admin_email and admin_password:
+            database = get_database()
+            bootstrap_admin(database, email=admin_email, password=admin_password)
+        yield
+    finally:
+        close_client()
 
 
 app = FastAPI(

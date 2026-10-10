@@ -22,15 +22,39 @@ from backend.app.main import app
 
 
 @pytest.fixture
-def api():
+def api(monkeypatch):
     database = mongomock.MongoClient(tz_aware=True)[f"tracex-test-{uuid4().hex}"]
     ensure_indexes(database)
     app.dependency_overrides[get_database] = lambda: database
+    from backend.app import main as main_module
+
+    monkeypatch.setattr(main_module, "get_database", lambda: database)
+    monkeypatch.setattr(main_module, "close_client", lambda: None)
+    monkeypatch.delenv("ADMIN_EMAIL", raising=False)
+    monkeypatch.delenv("ADMIN_PASSWORD", raising=False)
     try:
         with TestClient(app) as client:
             yield client
     finally:
         app.dependency_overrides.clear()
+
+
+def test_application_startup_bootstraps_admin_from_environment(monkeypatch):
+    database = mongomock.MongoClient(tz_aware=True).tracex
+    ensure_indexes(database)
+    from backend.app import main as main_module
+
+    monkeypatch.setattr(main_module, "get_database", lambda: database)
+    monkeypatch.setattr(main_module, "close_client", lambda: None)
+    monkeypatch.setenv("ADMIN_EMAIL", "startup-admin@example.test")
+    monkeypatch.setenv("ADMIN_PASSWORD", "Strong-startup-password")
+
+    with TestClient(app) as client:
+        assert client.get("/health").status_code == 200
+
+    user = database.users.find_one({"email": "startup-admin@example.test"})
+    assert user["role"] == "admin"
+    assert user["password_hash"] != "Strong-startup-password"
 
 
 def register(client: TestClient, email: str, password: str = "Test-password-123", name: str = "TraceX Test"):

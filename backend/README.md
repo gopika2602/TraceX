@@ -20,7 +20,7 @@ FastAPI backend for the existing TraceX React application. It uses MongoDB for u
 
 Development generates an ephemeral signing key at process startup when `JWT_SECRET_KEY` is absent, so existing sessions become invalid after a restart. Production requires a secret of at least 32 characters. Never commit a real secret. Copy `backend/.env.example` into a local environment file and replace the example value before a production deployment.
 
-Registering an account creates an Analyst by default. An account becomes Admin only when its email is on the server-side `TRACEX_BOOTSTRAP_ADMIN_EMAILS` allowlist at registration time. The role is never accepted from the client. Admins can apply remediation and reset the deterministic demo; analysts can read and create cases.
+On first startup with an empty `users` collection, setting both `ADMIN_EMAIL` and `ADMIN_PASSWORD` creates one Admin account. The password uses the same bcrypt hashing as normal registration. If any account already exists, bootstrap makes no changes. Remove the bootstrap variables after verifying the first Admin can sign in. Registering an account through `POST /auth/register` creates an Analyst by default. An account becomes Admin only when its email is on the server-side `TRACEX_BOOTSTRAP_ADMIN_EMAILS` allowlist at registration time. The role is never accepted from the client. Admins can apply remediation and reset the deterministic demo; analysts can read and create cases.
 
 ## Nimbus demo
 
