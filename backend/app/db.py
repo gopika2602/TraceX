@@ -42,6 +42,9 @@ def ensure_indexes(database) -> None:
     database.cases.create_index([("created_at", ASCENDING)])
     database.analyses.create_index([("case_id", ASCENDING)], unique=True)
     database.evidence.create_index([("case_id", ASCENDING), ("record.timestamp", ASCENDING)])
+    database.extractions.create_index([("owner_id", ASCENDING), ("created_at", ASCENDING)])
+    database.extractions.create_index([("owner_id", ASCENDING), ("content_hash", ASCENDING)], unique=True)
+    database.audit_events.create_index([("actor_id", ASCENDING), ("created_at", ASCENDING)])
 
 
 def close_client() -> None:

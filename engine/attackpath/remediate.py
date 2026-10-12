@@ -23,7 +23,7 @@ def recommend_remediations(root_cause: dict[str, Any], environment: dict[str, An
         recommendations.append({
             "remediation_id": "rem-2", "action": "reduce_scope", "target": structural["source"],
             "remove_permission": permission,
-            "description": f"Remove the observed excessive permission {permission} from {structural['source']}.",
+            "description": f"Review the explicit {permission} permission on {structural['source']} against policy; remove it only if unauthorized.",
             "expected_paths_broken": [structural["breaks_at_step"]] if structural.get("breaks_at_step") else [],
             "collateral": {"users_affected": 0},
         })

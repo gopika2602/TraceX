@@ -251,3 +251,72 @@ def test_case_intake_persists_evidence_and_analyzes_submitted_records(api: TestC
     assert saved_note.status_code == 200
     assert api.get("/cases/CASE-INTAKE-1").json()["case_information"]["investigator_notes"] == "Follow up with identity team."
     admin.close()
+
+
+def test_tracex_001_eight_record_regression_timeline_blast_and_verification(api: TestClient):
+    admin = TestClient(app)
+    assert register(admin, "admin@example.test", name="TraceX Admin").status_code == 201
+    assert register(api, "tracex001@example.test").status_code == 201
+    chronology = [
+        ("suspicious_login", "2026-10-01T10:05:00Z", None, None, None, "Suspicious login reported."),
+        ("session_token_issued", "2026-10-01T10:07:00Z", "session-token", "identity-api", "identity-api", "Session token issued."),
+        ("session_reuse", "2026-10-01T10:11:00Z", "session-token", "identity-api", "identity-api", "Session token reused."),
+        ("oauth_token_issued", "2026-10-01T10:14:00Z", "oauth-token", "identity-api", "identity-api", "OAuth token issued; policy breadth requires authoritative context."),
+        ("api_access", "2026-10-01T10:17:00Z", "oauth-token", "orders-api", "orders-api", "Orders API accessed."),
+        ("service_access", "2026-10-01T10:20:00Z", "oauth-token", "payment-service", "payment-service", "Payment service accessed."),
+        ("bulk_data_read", "2026-10-01T10:24:00Z", "oauth-token", "customer-db", "customer-db", "Customer records read in bulk."),
+        ("privileged_action_attempt", "2026-10-01T10:29:00Z", "oauth-token", "payment-service", "payment-service", "Privileged action attempted."),
+    ]
+    evidence = [{"evidence_type": kind, "timestamp": timestamp, "identity": "support-identity",
+                 "device_id": "support-device", "token_id": token, "api_service": app_name,
+                 "resource": resource, "description": description, "permission": "read"}
+                for kind, timestamp, token, app_name, resource, description in reversed(chronology)]
+    environment = {"nodes": [
+        {"id": "session-token", "type": "token"}, {"id": "oauth-token", "type": "token"},
+        {"id": "orders-api", "type": "api", "sensitivity": "medium"},
+        {"id": "payment-service", "type": "service", "sensitivity": "high", "tags": ["financial", "critical"]},
+        {"id": "customer-db", "type": "database", "sensitivity": "high", "tags": ["customer-data"]},
+        {"id": "normal-token", "type": "token"},
+        {"id": "normal-service", "type": "service"}], "edges": [
+        {"from": "session-token", "to": "oauth-token", "permission": "issue"},
+        {"from": "oauth-token", "to": "orders-api", "permission": "read"},
+        {"from": "orders-api", "to": "payment-service", "permission": "read"},
+        {"from": "payment-service", "to": "customer-db", "permission": "read"},
+        {"from": "normal-token", "to": "normal-service", "permission": "read"}]}
+    payload = {"case_id": "TRACEX-001", "case_name": "Controlled TRACEX-001 regression",
+               "evidence": evidence, "environment": environment}
+    created = api.post("/cases/intake", json=payload)
+    assert created.status_code == 201, created.text
+    saved = api.get("/cases/TRACEX-001/collected-evidence").json()
+    assert [item["timestamp"] for item in saved] == [item[1] for item in chronology]
+    analyzed = api.post("/cases/TRACEX-001/analyze")
+    assert analyzed.status_code == 200, analyzed.text
+    path = api.get("/cases/TRACEX-001/attack-path").json()["steps"]
+    assert [item["timestamp"] for item in path] == [item[1] for item in chronology]
+    root = api.get("/cases/TRACEX-001/root-cause").json()
+    assert root["initial_compromise"] == "support-identity"
+    assert "NO_STEP_UP_AUTH" not in {item["code"] for item in root["contributing_factors"]}
+    assert any("MFA status" in item for item in root["limitations"])
+    origin = api.get("/cases/TRACEX-001/attack-origin").json()
+    assert origin["confidence"]["basis"] == "Heuristic evidence score; not a calibrated probability."
+    assert origin["confidence"]["score"] > 0
+    trace = api.get("/cases/TRACEX-001/attack-origin/trace", params={"suspect_id": origin["suspect"]["id"]})
+    assert trace.status_code == 200, trace.text
+    assert len(trace.json()["nodes"]) == 8
+    radius = api.get("/cases/TRACEX-001/blast-radius").json()
+    assert radius["reachable_resources"] == 4
+    assert radius["financial_apis"] == 1
+    assert radius["customer_data_systems"] == 1
+    assert {item["name"] for item in radius["observed_targets"]} >= {"orders-api", "payment-service", "customer-db"}
+    assert {item["basis"] for item in radius["assets"]} == {"policy_reachable"}
+
+    remediations = api.get("/cases/TRACEX-001/remediations").json()
+    revoke = next(item for item in remediations if item["action"] == "revoke_token")
+    applied = admin.post(f"/cases/TRACEX-001/remediations/{revoke['id']}/apply")
+    assert applied.status_code == 200, applied.text
+    verification = admin.post("/cases/TRACEX-001/verify", params={"remediation_id": revoke["id"]})
+    assert verification.status_code == 200, verification.text
+    assert verification.json()["status"] == "PATH_BROKEN"
+    assert verification.json()["before_allowed_steps"]
+    assert verification.json()["normal_access_preserved"] is True
+    admin.close()

@@ -18,7 +18,7 @@ def analyze(events: list[dict[str, Any]], environment: dict[str, Any]) -> dict[s
     attack_paths = [reconstruct(events, group) for group in groups]
     primary = attack_paths[0] if attack_paths else {"steps": [], "nodes": [], "edges": []}
     root_cause = analyze_root_cause(primary, events, environment)
-    blast_radius = calculate_blast_radius(environment, root_cause.get("abused_credential"))
+    blast_radius = calculate_blast_radius(environment, root_cause.get("abused_credential"), events)
     remediations = recommend_remediations(root_cause, environment)
     attack_origin = analyze_attack_origin(events, primary, groups)
     return {"correlation": groups, "attack_path": primary, "attack_paths": attack_paths,

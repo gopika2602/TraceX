@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -54,6 +54,12 @@ class IntakeEvidence(BaseModel):
     api_service: str | None = Field(default=None, max_length=300)
     description: str | None = Field(default=None, max_length=4000)
     investigator_notes: str | None = Field(default=None, max_length=4000)
+    timestamp_source: str | None = Field(default=None, max_length=100)
+    raw_event_reference: str | None = Field(default=None, max_length=500)
+    evidence_source: str | None = Field(default=None, max_length=500)
+    extraction_method: str | None = Field(default=None, max_length=100)
+    confidence: float | None = Field(default=None, ge=0, le=1)
+    verification_status: Literal["unreviewed", "approved", "rejected"] | None = None
 
 
 class CaseIntake(BaseModel):

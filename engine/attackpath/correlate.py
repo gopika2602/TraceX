@@ -26,13 +26,17 @@ def _timestamp(event: dict[str, Any]) -> datetime | None:
     if not raw:
         return None
     try:
-        return datetime.fromisoformat(str(raw).replace("Z", "+00:00")).replace(tzinfo=timezone.utc)
+        parsed = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+        return parsed.replace(tzinfo=timezone.utc) if parsed.tzinfo is None else parsed.astimezone(timezone.utc)
     except ValueError:
         return None
 
 
 def _flags(event: dict[str, Any], events: list[dict[str, Any]]) -> list[str]:
     flags = set(event.get("suspicion_flags", []))
+    event_text = " ".join(str(event.get(key, "")) for key in ("event_type", "type", "summary")).lower()
+    if "suspicious_login" in event_text or "login_anomaly" in event_text:
+        flags.add("SUSPICIOUS_LOGIN")
     identity, device = _get(event, "identity"), _get(event, "device_id")
     if identity and device:
         known = {str(_get(other, "device_id")) for other in events
@@ -48,11 +52,6 @@ def _flags(event: dict[str, Any], events: list[dict[str, Any]]) -> list[str]:
                               else other.get("country") for other in sorted(prior, key=lambda x: _timestamp(x))), None)
         if first_country and first_country != country:
             flags.add("SESSION_REUSE_NEW_GEO")
-    scopes = event.get("scopes", event.get("metadata", {}).get("scopes", []))
-    if isinstance(scopes, str):
-        scopes = [scopes]
-    if any("admin" in str(scope).lower() for scope in scopes or []):
-        flags.add("TOKEN_SCOPE_EXCESSIVE")
     if int(event.get("rows", event.get("rows_read", 0)) or 0) > 1000:
         flags.add("BULK_READ")
     return sorted(flags)

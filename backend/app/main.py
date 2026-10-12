@@ -13,7 +13,7 @@ from pymongo.errors import PyMongoError
 from .config import CORS_ORIGINS
 from .bootstrap import bootstrap_admin
 from .db import close_client, get_database
-from .routers import auth_routes, cases, datasets
+from .routers import auth_routes, cases, datasets, extractions
 
 
 @asynccontextmanager
@@ -45,6 +45,7 @@ app.add_middleware(
 app.include_router(auth_routes.router)
 app.include_router(datasets.router)
 app.include_router(cases.router)
+app.include_router(extractions.router)
 
 
 @app.get("/health", tags=["health"])

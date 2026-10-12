@@ -103,7 +103,7 @@ def _event_evidence(event: dict[str, Any], events: list[dict[str, Any]]) -> list
         "malware_or_execution": ("malware", "ransomware", "payload_execution", "suspicious_process", "process_injection", "powershell_encoded"),
         "anomalous_authentication": ("impossible_travel", "mfa_bypass", "auth_anomaly", "authentication_anomaly", "session_hijack", "new_device"),
         "suspicious_network_activity": ("port_scan", "beacon", "lateral_movement", "suspicious_network", "network_scan"),
-        "unusual_login": ("unusual_login", "failed_login_burst", "login_anomaly", "new_geo"),
+        "unusual_login": ("unusual_login", "suspicious_login", "failed_login_burst", "login_anomaly", "new_geo"),
     }
     event_id = event.get("event_id", event.get("id"))
     for evidence_type, needles in patterns.items():
@@ -215,14 +215,18 @@ def score_origin_candidate(entity_id: str, entity_type: str, evidence_events: li
                                "description": "Evidence for this entity predates the latest observed incident event."})
             score += EVIDENCE_WEIGHTS["earlier_causal_evidence"]
     counter: list[dict[str, Any]] = []
+    adjustments: list[dict[str, Any]] = []
     if victim:
         score -= 40
+        adjustments.append({"type": "possible_compromised_victim", "points": -40})
         counter.append({"type": "possible_compromised_victim", "description": "Earlier compromise evidence means this entity may be an intermediary victim."})
     if timestamp_conflict:
         score -= 18
+        adjustments.append({"type": "timestamp_conflict", "points": -18})
         counter.append({"type": "timestamp_conflict", "description": "Linked event timestamps do not support a consistent backward order."})
     if weak_causal_link:
         score -= 12
+        adjustments.append({"type": "weak_causal_link", "points": -12})
         counter.append({"type": "weak_causal_link", "description": "The entity is connected only by a weak or incomplete relationship."})
     if not supporting:
         counter.append({"type": "missing_evidence", "description": "No direct malicious, theft, malware, or anomalous-authentication indicator was found."})
@@ -236,11 +240,16 @@ def score_origin_candidate(entity_id: str, entity_type: str, evidence_events: li
     else:
         level = "UNKNOWN"
     status = ("suspected_compromised_device" if entity_type == "device" else "potential_victim") if victim else ("suspected_origin" if score >= 35 else "unknown")
-    reason = (f"Score {score}/100 from {len(supporting)} supporting indicators" if supporting else "Insufficient direct evidence to rank this entity as an origin")
-    if counter:
-        reason += f"; {len(counter)} confidence reduction(s) applied."
+    contributions = [{"type": item["type"], "points": EVIDENCE_WEIGHTS[item["type"]]} for item in supporting]
+    raw_score = sum(item["points"] for item in contributions) + sum(item["points"] for item in adjustments)
+    reason = (f"Heuristic score {score}/100 from {len(supporting)} supporting indicators" if supporting else "Insufficient direct evidence to rank this entity as an origin")
+    if adjustments:
+        reason += f"; {len(adjustments)} score adjustment(s) applied."
     return {"entity_id": entity_id, "entity_type": entity_type, "status": status,
             "confidence_score": score, "confidence_level": level,
+            "score_breakdown": {"supporting": contributions, "adjustments": adjustments,
+                                "raw_score": raw_score, "final_score": score,
+                                "basis": "Heuristic evidence score; not a calibrated probability."},
             "supporting_evidence": supporting, "counter_evidence": counter,
             "reason": reason}
 
@@ -252,10 +261,19 @@ def analyze_attack_origin(events: list[dict[str, Any]], attack_path: dict[str, A
     """Trace suspicious event evidence backward and rank candidate entities."""
     if suspicious_event_ids is None:
         if attack_path:
-            suspicious_event_ids = [str(event_id) for step in attack_path.get("steps", [])
-                                    for event_id in step.get("event_ids", [])]
+            # Start at the latest observed event and follow explicit causal
+            # links backward. Seeding every event prevents backward tracing.
+            last_step = max(attack_path.get("steps", []),
+                            key=lambda step: _timestamp(step) or datetime.min.replace(tzinfo=timezone.utc),
+                            default=None)
+            suspicious_event_ids = [str(event_id) for event_id in (last_step or {}).get("event_ids", [])]
         elif correlated_groups:
-            suspicious_event_ids = [str(event_id) for group in correlated_groups for event_id in group.get("event_ids", [])]
+            group = correlated_groups[0] if correlated_groups else {}
+            group_ids = set(str(event_id) for event_id in group.get("event_ids", []))
+            latest = max((event for event in events if _event_id(event, 0) in group_ids),
+                         key=lambda event: _timestamp(event) or datetime.min.replace(tzinfo=timezone.utc),
+                         default=None)
+            suspicious_event_ids = [_event_id(latest, 0)] if latest else []
     trace = trace_backward(events, suspicious_event_ids, max_hops=max_hops)
     reached_events = [events[i] for i in trace["event_indices"]]
     seed_ids = set(suspicious_event_ids or [])

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Any
 
 STAGES = (
@@ -35,13 +36,19 @@ def _classify(event: dict[str, Any]) -> str:
 def reconstruct(events: list[dict[str, Any]], group: dict[str, Any]) -> dict[str, Any]:
     by_id = {str(event.get("event_id", event.get("id"))): event for event in events}
     selected = [by_id[event_id] for event_id in group["event_ids"] if event_id in by_id]
-    selected.sort(key=lambda event: str(event.get("timestamp", event.get("time", ""))))
-    staged: dict[str, list[dict[str, Any]]] = {stage: [] for stage in STAGES}
-    for event in selected:
-        staged[_classify(event)].append(event)
-    ordered = []
-    for stage in STAGES:
-        ordered.extend(staged[stage])
+    def chronology(event: dict[str, Any]) -> datetime:
+        raw = event.get("timestamp", event.get("time", event.get("occurred_at")))
+        try:
+            value = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+            if value.tzinfo is None:
+                value = value.replace(tzinfo=timezone.utc)
+            return value.astimezone(timezone.utc)
+        except (TypeError, ValueError):
+            # Keep malformed/missing timestamps stable and after valid chronology.
+            return datetime.max.replace(tzinfo=timezone.utc)
+
+    # Stages describe event semantics. They must never override observed time.
+    ordered = sorted(selected, key=chronology)
     steps = []
     graph_nodes: dict[str, dict[str, Any]] = {}
     edges = []

@@ -58,4 +58,17 @@ Vercel variables:
 - `VITE_API_BASE_URL` — required API base URL, set for each environment that should use the backend.
 - `VITE_USE_MOCK=false` — recommended for Production so case data uses the backend.
 
+## Evidence Agent API
+
+The authenticated, owner-scoped deterministic evidence-intake API is mounted at:
+
+- `POST /cases/extractions/preview` — multipart `story` text and/or repeated `files` fields. Supports `.csv`, `.json`, `.txt`, `.log`; 3 MiB per file, 8 MiB total request, maximum 500 extracted rows.
+- `GET /cases/extractions/{extraction_id}` — retrieve the caller's saved preview.
+- `PUT /cases/extractions/{extraction_id}/review` — edit permitted event fields and set each event to `approved`, `rejected`, or `unreviewed`. Approved events need a complete timezone-aware timestamp.
+- `POST /cases/extractions/{extraction_id}/import` — multipart `case_name`; imports approved evidence through existing case intake and Mongo persistence, then invokes the existing deterministic analysis endpoint. Response includes `analysis_status` (`analyzed` or `pending`). Repeated imports return the previously created case without duplicating it.
+
+These endpoints require the existing authenticated session. Parsing is deterministic; no AI provider is configured or invoked. PDF parsing, connected log sources, and provider-backed summaries are not available. Original text uploads are stored under the authenticated extraction owner for provenance. MongoDB adds indexes for extraction owner/time, per-owner source-content idempotency, and audit event actor/time; this is an additive index-only change, not a data migration. Audit metadata avoids storing story content or secrets.
+
+Deploy the current repository revision to both the Render backend and Vercel frontend to expose the feature. Do not enable production access until the corresponding environment variables above are configured and `/health/ready` reports the database as connected.
+
 The frontend permits a localhost API default only during Vite development. A production build without `VITE_API_BASE_URL` displays a configuration error rather than silently sending requests to a laptop address. Production builds also reject `VITE_USE_MOCK=true` and direct the operator to disable it. `/health` is a process health check; `/health/ready` checks MongoDB connectivity.

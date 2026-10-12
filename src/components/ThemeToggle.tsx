@@ -1,0 +1,2 @@
+import {useTheme} from '../theme/ThemeContext'
+export default function ThemeToggle(){const{theme,toggleTheme}=useTheme();const next=theme==='dark'?'light':'dark';return <button className="theme-toggle" type="button" onClick={toggleTheme} aria-label={`Switch to ${next} theme`} title={`Switch to ${next} theme`}><span aria-hidden="true">{theme==='dark'?'☼':'◐'}</span><small>{theme==='dark'?'Light':'Dark'}</small></button>}

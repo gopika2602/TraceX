@@ -83,19 +83,29 @@ def _summary(result: dict, case_id: str, created_at: datetime, events: list[dict
 
 
 def _intake_event(item, event_id: str) -> dict[str, Any]:
+    timestamp = item.timestamp
+    if timestamp.tzinfo is None:
+        timestamp = timestamp.replace(tzinfo=timezone.utc)
+    timestamp = timestamp.astimezone(timezone.utc)
     return {
         "event_id": event_id,
-        "timestamp": item.timestamp.astimezone(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "timestamp": timestamp.isoformat().replace("+00:00", "Z"),
         "event_type": item.evidence_type,
         "permission": item.permission,
-        "identity": item.identity or "unknown",
-        "token_id": item.token_id or "unknown",
-        "session_id": item.session_id or "unknown",
-        "device_id": item.device_id or "unknown",
-        "source": {"ip": item.source_ip or "unknown", "device_id": item.device_id or "unknown",
-                   "session_id": item.session_id or "unknown", "user_agent": item.user_agent or "unknown"},
-        "destination": {"ip": item.destination_ip or "unknown", "application": item.api_service or "unknown",
-                        "resource": item.resource or item.api_service or "unknown"},
+        # Missing values remain absent; the literal "unknown" must not become
+        # a shared identifier that links unrelated evidence records.
+        "identity": item.identity,
+        "token_id": item.token_id,
+        "session_id": item.session_id,
+        "device_id": item.device_id,
+        "source": {key: value for key, value in {
+            "ip": item.source_ip, "device_id": item.device_id,
+            "session_id": item.session_id, "user_agent": item.user_agent,
+        }.items() if value},
+        "destination": {key: value for key, value in {
+            "ip": item.destination_ip, "application": item.api_service,
+            "resource": item.resource or item.api_service,
+        }.items() if value},
         "summary": item.description or "Investigator supplied evidence record.",
         "metadata": {"source_label": item.source, "process": item.process,
                      "authentication": item.authentication, "network_connection": item.network_connection},
@@ -125,7 +135,12 @@ def create_intake(payload: CaseIntake, current_user: dict = Depends(get_current_
     events: list[dict[str, Any]] = []
     evidence_rows: list[dict[str, Any]] = []
     for item in payload.evidence:
+        normalized_time = item.timestamp
+        if normalized_time.tzinfo is None:
+            normalized_time = normalized_time.replace(tzinfo=timezone.utc)
+        normalized_time = normalized_time.astimezone(timezone.utc)
         record = item.model_dump(mode="json", exclude_none=True)
+        record["timestamp"] = normalized_time.isoformat().replace("+00:00", "Z")
         event_id = f"evidence-{uuid4().hex}"
         events.append(_intake_event(item, event_id))
         evidence_rows.append({"_id": event_id, "case_id": case_id, "owner_id": current_user["id"],
@@ -172,10 +187,20 @@ def _stored_evidence_response(document: dict) -> dict:
     return {"id": document["_id"], **document["record"], "event_id": document["event_id"]}
 
 
+def _sort_time(raw: Any) -> datetime:
+    try:
+        parsed = raw if isinstance(raw, datetime) else datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+        return parsed.replace(tzinfo=timezone.utc) if parsed.tzinfo is None else parsed.astimezone(timezone.utc)
+    except (TypeError, ValueError):
+        return datetime.max.replace(tzinfo=timezone.utc)
+
+
 @router.get("/cases/{case_id}/collected-evidence")
 def list_collected_evidence(case_id: str, current_user: dict = Depends(get_current_user), database=Depends(get_database)):
     _find_case(database, case_id, current_user)
-    return [_stored_evidence_response(row) for row in database.evidence.find({"case_id": case_id}).sort("record.timestamp", 1)]
+    rows = list(database.evidence.find({"case_id": case_id}))
+    rows.sort(key=lambda row: _sort_time(row.get("record", {}).get("timestamp")))
+    return [_stored_evidence_response(row) for row in rows]
 
 
 @router.patch("/cases/{case_id}/notes")
@@ -233,6 +258,7 @@ def _root_cause_response(result: dict) -> dict:
     codes = {
         "TOKEN_NOT_BOUND_TO_DEVICE": "Credential not bound to observed device",
         "EXCESSIVE_OAUTH_SCOPE": "Excessive OAuth permissions",
+        "ADMIN_PERMISSION_CONFIGURED": "Administrative permission in environment graph",
         "NO_STEP_UP_AUTH": "No step-up authentication",
     }
     factors = [{"code": item.get("code", "OBSERVED_FACTOR"), "title": codes.get(item.get("code"), "Contributing factor"), "detail": item.get("description", "")}
@@ -245,7 +271,7 @@ def _root_cause_response(result: dict) -> dict:
             breakpoints.append({
                 "type": kind,
                 "step": data.get("breaks_at_step", 0),
-                "action": "Revoke compromised credential" if kind == "immediate" else "Remove excessive permission",
+                "action": "Revoke observed credential" if kind == "immediate" else "Review configured permission",
                 "reason": f"{data.get('action', 'remediate')} {data.get('token_id', data.get('permission', 'access'))} to interrupt the observed path.",
             })
     return {
@@ -256,6 +282,7 @@ def _root_cause_response(result: dict) -> dict:
         "evidence_event_ids": root.get("evidence_event_ids", []),
         "related_event_ids": [str(event_id) for step in result.get("attack_path", {}).get("steps", []) for event_id in step.get("event_ids", [])],
         "confidence": None,
+        "limitations": root.get("limitations", []),
         "contributing_factors": factors,
         "breakpoints": breakpoints,
     }
@@ -269,7 +296,12 @@ def _blast_radius_response(result: dict) -> dict:
         "category": item.get("tags", ["resource"])[0] if isinstance(item.get("tags"), list) and item.get("tags") else item.get("type", "resource"),
         "sensitivity": str(item.get("sensitivity", "low")).title(),
         "hops": item.get("hops", 0),
+        "basis": "policy_reachable",
     } for item in blast.get("reachable_nodes", [])]
+    observed_targets = [{"name": item.get("node_id", "unknown"),
+                         "event_ids": item.get("event_ids", []),
+                         "basis": "reported_destination"}
+                        for item in blast.get("observed_targets", [])]
     return {
         "reachable_resources": summary.get("reachable_resources", 0),
         "sensitive_assets": summary.get("sensitive_assets", 0),
@@ -277,6 +309,7 @@ def _blast_radius_response(result: dict) -> dict:
         "financial_apis": summary.get("financial_apis", 0),
         "customer_data_systems": summary.get("customer_data_systems", 0),
         "other_identities": summary.get("other_identities", 0),
+        "observed_targets": observed_targets,
         "assets": assets,
         "synthetic": bool(result.get("synthetic", False)),
     }
@@ -341,7 +374,9 @@ def _origin_assessment(result: dict, case_id: str) -> dict:
         "status": status,
         "suspect": suspect,
         "likely_origin": likely_origin,
-        "confidence": {"score": max(0, min(1, float(score or 0) / 100)), "label": (selected or {}).get("confidence_level", "UNKNOWN")},
+        "confidence": {"score": max(0, min(1, float(score or 0) / 100)), "label": (selected or {}).get("confidence_level", "UNKNOWN"),
+                        **(selected or {}).get("score_breakdown", {}),
+                        "basis": "Heuristic evidence score; not a calibrated probability."},
         "summary": summary,
         "attribution_confirmed": False,
     }
@@ -426,7 +461,14 @@ def get_case(case_id: str, current_user: dict = Depends(get_current_user), datab
 
 def _event_response(events: list[dict]) -> list[dict]:
     response = []
-    for item in events:
+    def event_time(item):
+        raw = item.get("timestamp", item.get("time", ""))
+        try:
+            value = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+            return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value.astimezone(timezone.utc)
+        except (TypeError, ValueError):
+            return datetime.max.replace(tzinfo=timezone.utc)
+    for item in sorted(events, key=event_time):
         source = item.get("source") if isinstance(item.get("source"), dict) else {}
         destination = item.get("destination") if isinstance(item.get("destination"), dict) else {}
         response.append({
@@ -505,7 +547,9 @@ def get_attack_origin_trace(case_id: str, suspect_id: str = Query(min_length=1),
     candidate = next((item for item in candidates if str(item.get("entity_id")) == suspect_id), None)
     if not candidate:
         raise HTTPException(status_code=404, detail="Suspect was not found in this case's backend origin assessment.")
-    seed_ids = [str(event_id) for step in result.get("attack_path", {}).get("steps", []) for event_id in step.get("event_ids", [])]
+    path_steps = result.get("attack_path", {}).get("steps", [])
+    latest_step = max(path_steps, key=lambda step: _sort_time(step.get("timestamp")), default=None)
+    seed_ids = [str(event_id) for event_id in (latest_step or {}).get("event_ids", [])]
     trace = trace_backward(events, seed_ids)
     linked_events = [events[index] for index in trace["event_indices"]]
     nodes = []

@@ -1,0 +1,39 @@
+import {useState,type ChangeEvent,type FormEvent} from 'react'
+import {useNavigate} from 'react-router-dom'
+import axios from 'axios'
+import {importExtraction,previewExtraction,reviewExtraction,type ExtractionEvent,type ExtractionPreview} from '../api/client'
+import {Icon} from '../components/Icons'
+
+function problem(error:unknown){if(axios.isAxiosError(error)){const detail=error.response?.data?.detail;return typeof detail==='string'?detail:(detail?.message??error.message)}return error instanceof Error?error.message:'The extraction request failed.'}
+const editableFields:{key:keyof ExtractionEvent;label:string}[]=[{key:'evidence_type',label:'Event type'},{key:'timestamp',label:'Timestamp (include timezone)'},{key:'identity',label:'Identity / account'},{key:'source_ip',label:'Source IP'},{key:'destination_ip',label:'Destination IP'},{key:'device_id',label:'Device / host'},{key:'api_service',label:'Application / service'},{key:'resource',label:'Resource / target'},{key:'description',label:'Observed description'}]
+
+export default function AgentPage(){
+  const navigate=useNavigate(),[story,setStory]=useState(''),[files,setFiles]=useState<File[]>([]),[preview,setPreview]=useState<ExtractionPreview|null>(null),[caseName,setCaseName]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('')
+  function selectFiles(event:ChangeEvent<HTMLInputElement>){setFiles(Array.from(event.target.files??[]));setPreview(null);setNotice('')}
+  async function extract(event:FormEvent){event.preventDefault();setBusy(true);setError('');setNotice('');try{const result=await previewExtraction(story,files);setPreview(result);setCaseName('');setNotice('Extraction preview ready. Review each record; nothing has been imported yet.')}catch(reason){setError(problem(reason))}finally{setBusy(false)}}
+  function update(eventId:string,key:keyof ExtractionEvent,value:string){setPreview(current=>current?({...current,events:current.events.map(item=>item.event_id===eventId?{...item,[key]:value||null}:item)}):current)}
+  function setStatus(eventId:string,status:ExtractionEvent['verification_status']){setPreview(current=>current?({...current,events:current.events.map(item=>item.event_id===eventId?{...item,verification_status:status}:item)}):current)}
+  async function saveReview(){if(!preview)return;setBusy(true);setError('');try{const result=await reviewExtraction(preview.id,preview.events);setPreview(result);setNotice('Review saved to the authenticated account.')}catch(reason){setError(problem(reason))}finally{setBusy(false)}}
+  async function importApproved(){if(!preview)return;setBusy(true);setError('');try{const reviewed=await reviewExtraction(preview.id,preview.events);const created=await importExtraction(reviewed.id,caseName);navigate(`/cases/${created.case_id}?tab=evidence`,{state:{analysisPending:created.analysis_status==='pending'}})}catch(reason){setError(problem(reason))}finally{setBusy(false)}}
+  const approved=preview?.events.filter(event=>event.verification_status==='approved').length??0
+  return <div className="agent-page">
+    <div className="agent-hero"><div><div className="panel-eyebrow">TRACEX / INVESTIGATION WORKSPACE</div><h1>AI Investigation Agent</h1><p>Turn incident narratives and evidence files into reviewable, provenance-linked records for the existing TraceX analysis engine.</p></div><span className="agent-mode"><i/> DETERMINISTIC EXTRACTION</span></div>
+    <div className="agent-trust"><Icon name="shield"/><span><b>Evidence stays evidence.</b> This intake uses transparent deterministic rules, does not call an AI provider, and never follows instructions embedded in uploaded content. Extracted claims are unverified until you approve them.</span></div>
+    <form className="agent-input-card" onSubmit={extract}><div className="agent-section-head"><div><div className="panel-eyebrow">01 / INPUT</div><h2>Describe the incident or add source files</h2></div><span>CSV · JSON · TXT · LOG</span></div>
+      <label className="agent-story-label">Incident story<textarea value={story} onChange={event=>setStory(event.target.value)} rows={7} placeholder={'Describe observed events, one per line. Include full dates and timezone when available.\n\nExample: 2026-10-11T10:05:00+05:30 — account analyst@example.org signed in from 203.0.113.8'} /></label>
+      <label className="agent-file-picker"><Icon name="layers"/><span><b>Add multiple evidence files</b><small>Plain text formats only; max 3 MiB each and 8 MiB combined. Files are parsed as data and never executed.</small></span><input type="file" multiple accept=".csv,.json,.txt,.log,text/csv,application/json,text/plain" onChange={selectFiles}/></label>
+      {files.length>0&&<div className="agent-file-list">{files.map(file=><span key={`${file.name}-${file.size}`}>{file.name} <small>{(file.size/1024).toFixed(1)} KB</small></span>)}</div>}
+      <div className="agent-actions"><span>PDF parsing and connected SIEM ingestion are not configured.</span><button className="case-primary" disabled={busy||(!story.trim()&&!files.length)}>{busy?'Extracting…':'Generate review preview'} <Icon name="chevron"/></button></div>
+    </form>
+    {error&&<div className="inline-error" role="alert">{error}</div>}{notice&&<div className="agent-success" role="status">{notice}</div>}
+    {preview&&<section className="agent-review"><div className="agent-section-head"><div><div className="panel-eyebrow">02 / REVIEW · {preview.events.length} RECORDS</div><h2>Review extracted evidence</h2><p>Missing timestamps must be filled with a complete date and timezone before a record can be approved.</p></div><span className="agent-review-count">{approved} APPROVED</span></div>
+      <div className="agent-sources"><b>Source provenance</b>{preview.sources.map(source=><span key={`${source.name}-${source.kind}`}><Icon name="layers"/>{source.name}<small>{source.kind.toUpperCase()} · {source.size_bytes.toLocaleString()} bytes</small></span>)}</div>
+      <div className="agent-disclosures">{preview.warnings.map(warning=><p key={warning}><Icon name="pulse"/>{warning}</p>)}</div>
+      {preview.events.map((item,index)=><article className="agent-event" key={item.event_id}><header><span className="agent-event-number">{String(index+1).padStart(2,'0')}</span><div><strong>{item.evidence_type.replace(/_/g,' ')}</strong><small>{item.raw_event_reference} · confidence heuristic {(item.confidence*100).toFixed(0)}% (not calibrated)</small></div><select aria-label={`Review status for evidence ${index+1}`} value={item.verification_status} onChange={event=>setStatus(item.event_id,event.target.value as ExtractionEvent['verification_status'])}><option value="unreviewed">Needs review</option><option value="approved">Approve</option><option value="rejected">Reject</option></select></header>
+        {!!item.warnings.length&&<div className="agent-event-warning">{item.warnings.map(warning=><span key={warning}>{warning}</span>)}</div>}
+        <div className="agent-event-fields">{editableFields.map(field=><label key={field.key}>{field.label}<input value={String(item[field.key]??'')} onChange={event=>update(item.event_id,field.key,event.target.value)} /></label>)}</div>
+      </article>)}
+      <div className="agent-import-footer"><div><label>Investigation name<input value={caseName} onChange={event=>setCaseName(event.target.value)} placeholder="Name the investigation"/></label><small>Only approved records are saved to the existing case and MongoDB evidence flow.</small></div><div className="agent-actions"><button type="button" className="quiet-button" disabled={busy} onClick={()=>void saveReview()}>Save review</button><button type="button" className="case-primary" disabled={busy||approved===0||!caseName.trim()} onClick={()=>void importApproved()}>{busy?'Saving…':`Import ${approved} approved`}</button></div></div>
+    </section>}
+  </div>
+}

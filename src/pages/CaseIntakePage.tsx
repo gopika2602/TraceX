@@ -42,7 +42,7 @@ export default function CaseIntakePage(){
     }
     setBusy(true)
     try{
-      const payload:CaseIntake={...caseInfo,case_id:caseInfo.case_id||undefined,organization:caseInfo.organization||undefined,incident_at:caseInfo.incident_at?new Date(caseInfo.incident_at).toISOString():undefined,description:caseInfo.description||undefined,investigator_name:caseInfo.investigator_name||undefined,investigator_notes:caseInfo.investigator_notes||undefined,evidence,environment}
+      const payload:CaseIntake={...caseInfo,case_id:caseInfo.case_id||undefined,organization:caseInfo.organization||undefined,incident_at:caseInfo.incident_at?new Date(caseInfo.incident_at).toISOString():undefined,description:caseInfo.description||undefined,investigator_name:caseInfo.investigator_name||undefined,investigator_notes:caseInfo.investigator_notes||undefined,evidence:evidence.map(item=>({...item,timestamp:new Date(item.timestamp).toISOString()})),environment}
       const created=await submitCaseIntake(payload);navigate(`/cases/${created.case_id}?tab=evidence`,{replace:true})
     }catch(reason){
       const detail=axios.isAxiosError(reason)?reason.response?.data?.detail:undefined
