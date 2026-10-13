@@ -249,7 +249,8 @@ def review_extraction(extraction_id: str, payload: ReviewRequest, user: dict = D
 def import_extraction(extraction_id: str, case_name: str = Form(min_length=1, max_length=200), user: dict = Depends(get_current_user), database=Depends(get_database)):
     doc = _owned(database, extraction_id, user["id"])
     if doc["status"] == "imported":
-        return {"status": "already_imported", "case_id": doc["case_id"], "analysis_status": doc.get("analysis_status", "pending")}
+        return {"status": "already_imported", "case_id": doc["case_id"], "analysis_status": doc.get("analysis_status", "pending"),
+                "evidence_count": database.evidence.count_documents({"case_id": doc["case_id"]})}
     if doc["status"] not in {"reviewed"}:
         raise HTTPException(status_code=409, detail="Review and save this extraction before importing it.")
     approved = [event for event in doc["events"] if event.get("verification_status") == "approved"]
@@ -268,7 +269,8 @@ def import_extraction(extraction_id: str, case_name: str = Form(min_length=1, ma
     if not claimed:
         current = _owned(database, extraction_id, user["id"])
         if current["status"] == "imported":
-            return {"status": "already_imported", "case_id": current["case_id"], "analysis_status": current.get("analysis_status", "pending")}
+            return {"status": "already_imported", "case_id": current["case_id"], "analysis_status": current.get("analysis_status", "pending"),
+                    "evidence_count": database.evidence.count_documents({"case_id": current["case_id"]})}
         raise HTTPException(status_code=409, detail="This extraction is already being imported. Refresh its status and try again.")
     from .cases import create_intake
     try:
@@ -289,4 +291,4 @@ def import_extraction(extraction_id: str, case_name: str = Form(min_length=1, ma
         database.cases.update_one({"_id": result["case_id"], "created_by": user["id"]}, {"$set": {"status": "Draft"}})
     database.extractions.update_one({"_id": extraction_id, "owner_id": user["id"], "status": "importing"}, {"$set": {"status": "imported", "case_id": result["case_id"], "analysis_status": analysis_status, "imported_at": datetime.now(timezone.utc)}, "$unset": {"importing_started_at": ""}})
     _audit(database, user, "extraction_imported", extraction_id, {"case_id": result["case_id"], "event_count": len(approved)})
-    return {"status": "imported", "analysis_status": analysis_status, **result}
+    return {**result, "status": "imported", "analysis_status": analysis_status, "evidence_count": len(approved)}

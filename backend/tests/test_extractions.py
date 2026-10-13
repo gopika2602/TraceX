@@ -51,6 +51,7 @@ def test_story_extraction_review_import_and_analysis(api: TestClient):
     assert reviewed.status_code == 200, reviewed.text
     imported = api.post(f"/cases/extractions/{preview['id']}/import", data={"case_name": "Reviewed narrative"})
     assert imported.status_code == 201, imported.text
+    assert imported.json()["status"] == "imported"
     assert imported.json()["analysis_status"] == "analyzed"
     case_id = imported.json()["case_id"]
     assert imported.json()["evidence_count"] == 2
@@ -64,6 +65,8 @@ def test_story_extraction_review_import_and_analysis(api: TestClient):
     assert duplicate_import.status_code == 201
     assert duplicate_import.json()["status"] == "already_imported"
     assert duplicate_import.json()["case_id"] == case_id
+    assert duplicate_import.json()["evidence_count"] == 2
+    assert len(api.get(f"/cases/{case_id}/collected-evidence").json()) == 2
 
 
 def test_csv_preview_duplicate_idempotency_malformed_and_unsupported(api: TestClient):

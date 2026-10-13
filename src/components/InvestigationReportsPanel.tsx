@@ -1,0 +1,34 @@
+import {useCallback,useEffect,useState} from 'react'
+import axios from 'axios'
+import {downloadInvestigationReport,generateInvestigationReport,getReportReadiness,listInvestigationReports,type GeneratedReport,type ReportReadiness} from '../api/client'
+
+function errorMessage(error:unknown){if(axios.isAxiosError(error)){const detail=error.response?.data?.detail;return typeof detail==='string'?detail:(detail?.message??error.message)}return error instanceof Error?error.message:'The report request failed.'}
+
+export default function InvestigationReportsPanel({caseId}:{caseId:string}){
+  const[readiness,setReadiness]=useState<ReportReadiness|null>(null),[reports,setReports]=useState<GeneratedReport[]>([]),[selected,setSelected]=useState<string[]>([]),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('')
+  const refresh=useCallback(async()=>{setLoading(true);setError('');try{const [ready,saved]=await Promise.all([getReportReadiness(caseId),listInvestigationReports(caseId)]);setReadiness(ready);setReports(saved.reports);setSelected(current=>current.length?current:ready.sections.filter(section=>section.available).map(section=>section.key))}catch(reason){setError(errorMessage(reason))}finally{setLoading(false)}},[caseId])
+  useEffect(()=>{setReadiness(null);setReports([]);setSelected([]);setNotice('')},[caseId])
+  useEffect(()=>{void refresh()},[refresh])
+  function toggle(key:string){setSelected(current=>current.includes(key)?current.filter(value=>value!==key):[...current,key])}
+  async function generate(format:'pdf'|'powerpoint'|'both'){
+    if(!selected.length)return
+    setBusy(true);setError('');setNotice('Preparing report from saved case records…')
+    try{const result=await generateInvestigationReport(caseId,format,selected);setReports(current=>[result.report,...current]);setReadiness(result.readiness);setNotice(result.report.status==='ready'?'Report files generated and validated.':`Report generation completed partially; available files: ${result.report.files.map(file=>file.format).join(', ')||'none'}.`);await refresh()}
+    catch(reason){setNotice('');setError(errorMessage(reason))}finally{setBusy(false)}
+  }
+  async function download(report:GeneratedReport,file:GeneratedReport['files'][number]){
+    setError('');try{const blob=await downloadInvestigationReport(report.id,file.format);const url=URL.createObjectURL(blob);const anchor=document.createElement('a');anchor.href=url;anchor.download=file.filename;document.body.appendChild(anchor);anchor.click();anchor.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1000)}catch(reason){setError(errorMessage(reason))}
+  }
+  if(loading&&!readiness)return <section className="report-workspace"><p role="status">Loading saved investigation data…</p></section>
+  if(error&&!readiness)return <section className="report-workspace"><div className="inline-error" role="alert">{error}</div><button type="button" className="quiet-button" onClick={()=>void refresh()}>Retry</button></section>
+  if(!readiness)return null
+  return <section className="report-workspace" aria-label="Investigation reports">
+    <header className="report-heading"><div><span className="panel-eyebrow">TRACEX / REPORT INTELLIGENCE</span><h2>Investigation Reports</h2><p>Generate reviewable files from this investigation’s persisted evidence and existing analysis.</p></div><span className="report-engine-label">{readiness.composition_mode==='ai'?'AI-ASSISTED':'DETERMINISTIC'} COMPOSITION</span></header>
+    <div className="report-case-summary"><div><span>INVESTIGATION</span><strong>{readiness.case.title}</strong><small>{readiness.case.id} · {readiness.case.status}</small></div><div><span>SAVED EVIDENCE</span><strong>{readiness.counts.evidence_records}</strong><small>{readiness.counts.approved} approved · {readiness.counts.rejected} rejected · {readiness.counts.awaiting_review} awaiting review</small></div><div><span>ANALYSIS</span><strong>{readiness.analysis_available?'Available':'Incomplete'}</strong><small>{readiness.counts.timeline_events} persisted timeline events</small></div></div>
+    <p className="report-disclosure">{readiness.disclosure}</p>
+    <section className="report-options"><div className="report-subhead"><div><span className="panel-eyebrow">REPORT CONTENT</span><h3>Choose sections</h3></div><small>Unavailable sections are disabled and will not be fabricated.</small></div><div className="report-option-grid">{readiness.sections.map(section=><label className={`report-option ${section.available?'':'is-unavailable'}`} key={section.key}><input type="checkbox" checked={selected.includes(section.key)} disabled={!section.available||busy} onChange={()=>toggle(section.key)}/><span><strong>{section.label}</strong>{!section.available&&<small>{section.reason}</small>}</span></label>)}</div></section>
+    <div className="report-actions"><button type="button" className="case-primary" disabled={busy||selected.length===0} onClick={()=>void generate('pdf')}>{busy?'Generating…':'Generate PDF Report'}</button><button type="button" className="case-primary report-secondary-action" disabled={busy||selected.length===0} onClick={()=>void generate('powerpoint')}>{busy?'Generating…':'Generate PowerPoint'}</button><button type="button" className="quiet-button" disabled={busy||selected.length===0} onClick={()=>void generate('both')}>{busy?'Generating…':'Generate Both'}</button></div>
+    {busy&&<div className="report-progress" role="status"><span className="spinner"/> Generating and validating requested files from saved data. This does not change the investigation.</div>}{notice&&<div className="agent-success" role="status">{notice}</div>}{error&&<div className="inline-error" role="alert">{error}</div>}
+    <section className="saved-reports"><div className="report-subhead"><div><span className="panel-eyebrow">PERSISTED REPORT METADATA</span><h3>Generated reports</h3></div><button type="button" className="quiet-button" disabled={loading||busy} onClick={()=>void refresh()}>Refresh</button></div>{reports.length===0?<div className="intake-empty">No generated reports are saved for this investigation yet.</div>:<div className="saved-report-list">{reports.map(report=><article className="saved-report" key={report.id}><div><strong>{new Date(report.generated_at).toLocaleString()}</strong><small>{report.status.toUpperCase()} · {report.composition_mode} · {report.sections.length} selected sections</small>{report.errors.map(item=><small className="report-file-warning" key={item.format}>{item.format}: {item.message}</small>)}</div><div className="saved-report-files">{report.files.map(file=><button key={file.format} type="button" className="quiet-button" onClick={()=>void download(report,file)}>Download {file.format==='pdf'?'PDF':'PowerPoint'}</button>)}</div></article>)}</div>}</section>
+  </section>
+}

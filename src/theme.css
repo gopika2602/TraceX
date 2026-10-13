@@ -14,3 +14,8 @@ html[data-theme="light"] .login-nav,html[data-theme="light"] .login-card{backgro
 html[data-theme="light"] .login-card h1,html[data-theme="light"] .login-card label{color:#33203d}
 html[data-theme="light"] .login-card input{background:#fff;border-color:#dfcce1;color:#33203d}
 html[data-theme="light"] .login-bottom,html[data-theme="light"] .login-foot{color:#76677d}
+html[data-theme="light"] .report-options,html[data-theme="light"] .saved-reports{background:#fffaff;border-color:#dfcce1}
+html[data-theme="light"] .report-case-summary>div,html[data-theme="light"] .report-option,html[data-theme="light"] .saved-report{background:#fff;border-color:#dfcce1}
+html[data-theme="light"] .report-heading h2,html[data-theme="light"] .report-subhead h3,html[data-theme="light"] .report-case-summary strong,html[data-theme="light"] .saved-report strong{color:#33203d}
+html[data-theme="light"] .report-disclosure{background:#fff5fc;border-color:#ead8e9;color:#594a62}
+html[data-theme="light"] .report-case-summary span,html[data-theme="light"] .report-case-summary small,html[data-theme="light"] .report-option small,html[data-theme="light"] .saved-report small{color:#76677d}
